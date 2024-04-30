@@ -60,8 +60,20 @@ public class Board : MonoBehaviour
         // for (int i = 0; i < 30; i++)
         //     addCircle();
 
-        AddRect(new Vector2(0.0f, 0.0f), 2.0f, 1.0f);
-        AddRect(new Vector2(0.0f, 0.0f), 1.0f, 2.0f);
+// let Box1 = new Box(200, 200, 240, 200, 20, 1);
+// let Box2 = new Box(100, 200, 120, 200, 40, 1);
+
+        // AddRect(new Vector2(0.9f, 1.2f), 0.2f, 0.4f, new Vector2(0.0f, 1.0f));
+        // AddRect(new Vector2(0.9f, 2.6f), 0.2f, 0.4f, new Vector2(0.0f, 0.0f));
+
+        // AddRect(new Vector2(0.0f, 1.0f), 1.0f, 2.0f, new Vector2(0.0f, 0.0f));
+        // AddRect(new Vector2(0.0f, -1.0f), 1.0f, 2.0f, new Vector2(0.0f, 1.0f));
+
+        AddRect(new Vector2(2.2f, 2.1f), 0.4f, 0.2f, new Vector2(-1.0f, 0.0f));
+        AddRect(new Vector2(1.1f, 2.2f), 0.2f, 0.4f, Vector2.zero);
+
+        // AddRect(new Vector2(0.0f, 0.0f), 2.0f, 1.0f);
+        // AddRect(new Vector2(0.0f, 0.0f), 1.0f, 2.0f);
     }
 
     // Update is called once per frame
@@ -115,7 +127,8 @@ public class Board : MonoBehaviour
             PhysicsLogic.RotateRect(m_physicsData, 0);
         }
 
-        if (PhysicsLogic.SeparatingAxisTheorem(m_physicsData, 0, 1))
+        SATOutputData satOutputData;
+        if (PhysicsLogic.SeparatingAxisTheorem(m_physicsData, 0, 1, out satOutputData))
         {
             m_rectGO[0].GetComponent<MeshRenderer>().material.color = Color.red;
             m_rectGO[1].GetComponent<MeshRenderer>().material.color = Color.red;
@@ -154,7 +167,7 @@ public class Board : MonoBehaviour
         }
     }
 
-    private void AddRect(Vector2 pos, float width, float height)
+    private void AddRect(Vector2 pos, float width, float height, Vector2 velocity)
     {
         GameObject go = Instantiate(RectPrefab);
         m_rectGO[m_physicsData.RectCount] = go;
@@ -169,7 +182,7 @@ public class Board : MonoBehaviour
         meshFilter.mesh = mesh;
         m_rectMesh[m_physicsData.RectCount] = mesh;
 
-        PhysicsLogic.AddRect(m_physicsData, pos, new Vector2(0.0f, 0.0f), width, height, 1.0f);
+        PhysicsLogic.AddRect(m_physicsData, pos, velocity, width, height, 1.0f);
         //PhysicsLogic.RotateRect(m_physicsData, 0);
     }
 

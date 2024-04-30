@@ -1,4 +1,5 @@
 using System;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Unity.Mathematics;
 using Unity.VisualScripting;
@@ -6,13 +7,31 @@ using UnityEngine;
 
 namespace DODPhysics
 {
+    [Serializable]
     public struct RectCollisionData
     {
-        public int rectIdx1; // rect index 1
-        public int rectIdx2; // rect index 2
-        public Vector2 perp; // perpendicular vector
-        public Vector2 pen; // penetration vector
-        public Vector2 cp; // collision point
+        public int RectIdx1; // rect index 1
+        public int RectIdx2; // rect index 2
+        public Vector2 Perpendicular; // perpendicular vector
+        public float Penetration; // penetration vector
+        public Vector2 CollisionPoint; // collision point
+
+        public RectCollisionData(int rectIdx1, int rectIdx2, Vector2 perpendicular, float penetration, Vector2 collisionPoint)
+        {
+            RectIdx1 = rectIdx1;
+            RectIdx2 = rectIdx2;
+            Perpendicular = perpendicular;
+            Penetration = penetration;
+            CollisionPoint = collisionPoint;
+        }
+    }
+
+    [Serializable]
+    public struct SATOutputData
+    {
+        public float Penetration;
+        public Vector2 Axis;
+        public Vector2 CollisionVertex;
     }
 
     public static class PhysicsLogic
@@ -35,8 +54,14 @@ namespace DODPhysics
             physicsData.RectHeight = new float[maxRects];
             physicsData.RectPosition = new Vector2[maxRects];
             physicsData.RectDirection = new Vector2[maxRects];
+            physicsData.RectVelocity = new Vector2[maxRects];
+            physicsData.RectAngularVelocity = new float[maxRects];
             physicsData.RectMass = new float[maxRects];
+            physicsData.RectInvMass = new float[maxRects];
             physicsData.RectAngle = new float[maxRects];
+            physicsData.RectInertia = new float[maxRects];
+            physicsData.RectInvInertia = new float[maxRects];
+            physicsData.RectElasticity = new float[maxRects];
         }
 
         public static void AddCircle(PhysicsData physicsData, Vector2 pos, Vector2 dir, float radius, float mass)
@@ -64,6 +89,34 @@ namespace DODPhysics
                 {
                     checkCircleCircleCollision(physicsData, circleCollisionHappened, i1, i2);
                 }
+            }
+
+            RectCollisionData* rectCollisionData = stackalloc RectCollisionData[physicsData.RectCount];
+            int rectCollisionDataCount = 0;
+            for (int i1 = 0; i1 < physicsData.RectCount; i1++)
+            {
+                for (int i2 = i1 + 1; i2 < physicsData.RectCount; i2++)
+                {
+                    SATOutputData satOutputData;
+                    if (SeparatingAxisTheorem(physicsData, i1, i2, out satOutputData))
+                        rectCollisionData[rectCollisionDataCount++] = new RectCollisionData(i1, i2, satOutputData.Axis, satOutputData.Penetration, satOutputData.CollisionVertex);
+                }
+            }
+
+            for (int i = 0; i < rectCollisionDataCount; i++)
+            {
+                // penetration resolution
+                PenetrationResolution(physicsData, rectCollisionData[i]);
+                // todo collision response
+                CollisionResponse(physicsData, rectCollisionData[i]);
+            }
+
+            for (int i = 0; i < physicsData.RectCount; i++)
+            {
+                physicsData.RectPosition[i] += physicsData.RectVelocity[i] * dt;
+                physicsData.RectAngle[i] += physicsData.RectAngularVelocity[i] * dt;
+
+                SetRectVertices(physicsData, i);
             }
 
             Vector2 gravity = new Vector2(0.0f, physicsData.Gravity);
@@ -164,14 +217,19 @@ namespace DODPhysics
             }
         }
 
-        public static void AddRect(PhysicsData physicsData, Vector2 pos, Vector2 dir, float width, float height, float mass)
+        public static void AddRect(PhysicsData physicsData, Vector2 pos, Vector2 velocity, float width, float height, float mass)
         {
             physicsData.RectWidth[physicsData.RectCount] = width;
             physicsData.RectHeight[physicsData.RectCount] = height;
             physicsData.RectPosition[physicsData.RectCount] = pos;
-            physicsData.RectDirection[physicsData.RectCount] = dir;
+            physicsData.RectDirection[physicsData.RectCount] = new Vector2(0.0f, 1.0f);
+            physicsData.RectVelocity[physicsData.RectCount] = velocity;
             physicsData.RectMass[physicsData.RectCount] = mass;
+            physicsData.RectInvMass[physicsData.RectCount] = 1.0f / mass;
             physicsData.RectAngle[physicsData.RectCount] = 0.0f;
+            physicsData.RectInertia[physicsData.RectCount] = mass * (width * width + height * height) / 12.0f;
+            physicsData.RectInvInertia[physicsData.RectCount] = 1.0f / physicsData.RectInertia[physicsData.RectCount];
+            physicsData.RectElasticity[physicsData.RectCount] = 1.0f;
 
             RotateRect(physicsData, physicsData.RectCount);
 
@@ -206,47 +264,192 @@ namespace DODPhysics
             SetRectVertices(physicsData, idx);
         }
 
-        public static bool SeparatingAxisTheorem(PhysicsData physicsData, int idx1, int idx2)
+        public static unsafe bool SeparatingAxisTheorem(PhysicsData physicsData, int idx1, int idx2, out SATOutputData satOutputData)
         {
-            float rect1min;
-            float rect1max;
-            float rect2min;
-            float rect2max;
-            getRectMinMaxForAxis(physicsData, idx1, Vector2.Perpendicular(physicsData.RectDirection[idx1]), out rect1min, out rect1max);
-            getRectMinMaxForAxis(physicsData, idx2, Vector2.Perpendicular(physicsData.RectDirection[idx1]), out rect2min, out rect2max);
-            if (Mathf.Min(rect1max, rect2max) - Mathf.Max(rect1min, rect2min) < 0.0f)
-                return false;
+            satOutputData = new SATOutputData();
 
-            getRectMinMaxForAxis(physicsData, idx1, physicsData.RectDirection[idx1], out rect1min, out rect1max);
-            getRectMinMaxForAxis(physicsData, idx2, physicsData.RectDirection[idx1], out rect2min, out rect2max);
-            if (Mathf.Min(rect1max, rect2max) - Mathf.Max(rect1min, rect2min) < 0.0f)
-                return false;
+            float minOverlap = float.MaxValue;
+            int vertexRectIdx = idx1;
 
-            getRectMinMaxForAxis(physicsData, idx1, Vector2.Perpendicular(physicsData.RectDirection[idx2]), out rect1min, out rect1max);
-            getRectMinMaxForAxis(physicsData, idx2, Vector2.Perpendicular(physicsData.RectDirection[idx2]), out rect2min, out rect2max);
-            if (Mathf.Min(rect1max, rect2max) - Mathf.Max(rect1min, rect2min) < 0.0f)
-                return false;
+            int axisCount = 4; // todo handle circles and lines
+            Vector2* axis = stackalloc Vector2[axisCount];
+            axis[0] = VectorPerpendicular2D(physicsData.RectDirection[idx1]);
+            axis[1] = physicsData.RectDirection[idx1];
+            axis[2] = VectorPerpendicular2D(physicsData.RectDirection[idx2]);
+            axis[3] = physicsData.RectDirection[idx2];
+            float firstShapeAxisIdxs = 2; // todo , handle circles and lines
 
-            getRectMinMaxForAxis(physicsData, idx1, physicsData.RectDirection[idx2], out rect1min, out rect1max);
-            getRectMinMaxForAxis(physicsData, idx2, physicsData.RectDirection[idx2], out rect2min, out rect2max);
-            if (Mathf.Min(rect1max, rect2max) - Mathf.Max(rect1min, rect2min) < 0.0f)
-                return false;
+            Vector2 smallestAxis = axis[0];
+
+            float proj1min;
+            float proj1max;
+            float proj2min;
+            float proj2max;
+            Vector2 collisionVertex;
+
+            for (int i = 0; i < axisCount; i++)
+            {
+                getRectMinMaxForAxis(physicsData, idx1, axis[i], out proj1min, out proj1max, out collisionVertex);
+                getRectMinMaxForAxis(physicsData, idx2, axis[i], out proj2min, out proj2max, out collisionVertex);
+                float overlap = Mathf.Min(proj1max, proj2max) - Mathf.Max(proj1min, proj2min);
+                if (overlap < 0.0f)
+                    return false;
+
+                // take into account if we are inside another object, or vice versa
+                if ((proj1max > proj2max && proj1min < proj2min) || (proj1max < proj2max && proj1min > proj2min))
+                {
+                    float mins = Mathf.Abs(proj1min - proj2min);
+                    float maxs = Mathf.Abs(proj1max - proj2max);
+                    if (mins < maxs)
+                        overlap += mins;
+                    else
+                    {
+                        overlap += maxs;
+                        axis[i] = axis[i] * -1.0f;
+                    }
+
+                }
+
+                if (overlap < minOverlap)
+                {
+                    minOverlap = overlap;
+                    smallestAxis = axis[i];
+                    if (i < firstShapeAxisIdxs)
+                    {
+                        vertexRectIdx = idx2;
+                        if (proj1max > proj2max)
+                            smallestAxis = axis[i] * -1.0f;
+                    }
+                    else
+                    {
+                        vertexRectIdx = idx1;
+                        if (proj1max < proj2max)
+                            smallestAxis = axis[i] * -1.0f;
+                    }
+                }
+
+            }
+
+            float min;
+            float max;
+            getRectMinMaxForAxis(physicsData, vertexRectIdx, smallestAxis, out min, out max, out collisionVertex);
+
+            if (vertexRectIdx == idx2)
+            {
+                smallestAxis = smallestAxis * -1.0f;
+            }
+
+            satOutputData.Penetration = minOverlap;
+            satOutputData.Axis = smallestAxis;
+            satOutputData.CollisionVertex = collisionVertex;
 
             return true;
         }
 
-        private static void getRectMinMaxForAxis(PhysicsData physicsData, int idx, Vector2 axis, out float min, out float max)
+        private static void getRectMinMaxForAxis(PhysicsData physicsData, int idx, Vector2 axis, out float min, out float max, out Vector2 collisionVertex)
         {
             min = max = Vector2.Dot(axis, physicsData.RectVertices[idx * 4 + 0]);
+            collisionVertex = physicsData.RectVertices[idx * 4 + 0];
             for (int v = 1; v < 4; v++)
             {
                 float p = Vector2.Dot(axis, physicsData.RectVertices[idx * 4 + v]);
                 if (p < min)
+                {
                     min = p;
+                    collisionVertex = physicsData.RectVertices[idx * 4 + v];
+                }
                 if (p > max)
                     max = p;
             }
         }
+
+        public static void PenetrationResolution(PhysicsData physicsData, RectCollisionData rectCollisionData)
+        {
+            // let penResolution = this.normal.mult(this.pen / (this.o1.inv_m + this.o2.inv_m));
+            // this.o1.pos = this.o1.pos.add(penResolution.mult(this.o1.inv_m));
+            // this.o2.pos = this.o2.pos.add(penResolution.mult(-this.o2.inv_m));
+
+            int idx1 = rectCollisionData.RectIdx1;
+            int idx2 = rectCollisionData.RectIdx2;
+            Vector2 penResolution = rectCollisionData.Perpendicular * (rectCollisionData.Penetration / (physicsData.RectInvMass[idx1] + physicsData.RectInvMass[idx2]));
+            physicsData.RectPosition[idx1] += penResolution * physicsData.RectInvMass[idx1];
+            physicsData.RectPosition[idx2] += penResolution * -physicsData.RectInvMass[idx2];
+        }
+
+        public static float VectorCross2D(Vector2 v1, Vector2 v2)
+        {
+            return v1.x * v2.y - v1.y * v2.x;
+        }
+
+        public static Vector2 VectorPerpendicular2D(Vector2 v)
+        {
+            return new Vector2(-v.y, v.x).normalized;
+        }
+
+        public static void CollisionResponse(PhysicsData physicsData, RectCollisionData rectCollisionData)
+        {
+            int idx1 = rectCollisionData.RectIdx1;
+            int idx2 = rectCollisionData.RectIdx2;
+
+            //1. Closing velocity
+            // let collArm1 = this.cp.subtr(this.o1.comp[0].pos);
+            // let rotVel1 = new Vector(-this.o1.angVel * collArm1.y, this.o1.angVel * collArm1.x);
+            // let closVel1 = this.o1.vel.add(rotVel1);
+            // let collArm2 = this.cp.subtr(this.o2.comp[0].pos);
+            // let rotVel2= new Vector(-this.o2.angVel * collArm2.y, this.o2.angVel * collArm2.x);
+            // let closVel2 = this.o2.vel.add(rotVel2);
+
+            Vector2 collArm1 = rectCollisionData.CollisionPoint - physicsData.RectPosition[idx1];
+            Vector2 rotVel1 = new Vector2(-physicsData.RectAngularVelocity[idx1] * collArm1.y, physicsData.RectAngularVelocity[idx1] * collArm1.x);
+            Vector2 closVel1 = physicsData.RectVelocity[idx1] + rotVel1;
+
+            Vector2 collArm2 = rectCollisionData.CollisionPoint - physicsData.RectPosition[idx2];
+            Vector2 rotVel2 = new Vector2(-physicsData.RectAngularVelocity[idx2] * collArm2.y, physicsData.RectAngularVelocity[idx2] * collArm2.x);
+            Vector2 closVel2 = physicsData.RectVelocity[idx2] + rotVel2;
+
+            // //2. Impulse augmentation
+            // let impAug1 = Vector.cross(collArm1, this.normal);
+            // impAug1 = impAug1 * this.o1.inv_inertia * impAug1;
+            // let impAug2 = Vector.cross(collArm2, this.normal);
+            // impAug2 = impAug2 * this.o2.inv_inertia * impAug2;
+
+            float impAug1 = VectorCross2D(collArm1, rectCollisionData.Perpendicular);
+            impAug1 = impAug1 * physicsData.RectInvInertia[idx1] * impAug1;
+            float impAug2 = VectorCross2D(collArm2, rectCollisionData.Perpendicular);
+            impAug2 = impAug2 * physicsData.RectInvInertia[idx2] * impAug2;
+
+            // let relVel = closVel1.subtr(closVel2);
+            // let sepVel = Vector.dot(relVel, this.normal);
+            // let new_sepVel = -sepVel * Math.min(this.o1.elasticity, this.o2.elasticity);
+            // let vsep_diff = new_sepVel - sepVel;
+
+            Vector2 retVel = closVel1 - closVel2;
+            float sepVel = Vector2.Dot(retVel, rectCollisionData.Perpendicular);
+            float newSepVel = -sepVel * Mathf.Min(physicsData.RectElasticity[idx1], physicsData.RectElasticity[idx2]);
+            float vsepDiff = newSepVel - sepVel;
+
+            // let impulse = vsep_diff / (this.o1.inv_m + this.o2.inv_m + impAug1 + impAug2);
+            // let impulseVec = this.normal.mult(impulse);
+            float impulse = vsepDiff / (physicsData.RectInvMass[idx1] + physicsData.RectInvMass[idx2] + impAug1 + impAug2);
+            Vector2 impulseVec = rectCollisionData.Perpendicular * impulse;
+
+            // //3. Changing the velocities
+            // this.o1.vel = this.o1.vel.add(impulseVec.mult(this.o1.inv_m));
+            // this.o2.vel = this.o2.vel.add(impulseVec.mult(-this.o2.inv_m));
+            physicsData.RectVelocity[idx1] += impulseVec * physicsData.RectInvMass[idx1];
+            physicsData.RectVelocity[idx2] += impulseVec * -physicsData.RectInvMass[idx2];
+
+            // this.o1.angVel += this.o1.inv_inertia * Vector.cross(collArm1, impulseVec);
+            // this.o2.angVel -= this.o2.inv_inertia * Vector.cross(collArm2, impulseVec); 
+            physicsData.RectAngularVelocity[idx1] += 3.0f * (physicsData.RectInvInertia[idx1] * VectorCross2D(collArm1, impulseVec));
+            physicsData.RectAngularVelocity[idx2] -= 3.0f * (physicsData.RectInvInertia[idx2] * VectorCross2D(collArm2, impulseVec));
+        }
+
+
+
+
+
+
 
 
         // private static unsafe bool checkRectRectCollision(PhysicsData physicsData, int i1, int i2)
