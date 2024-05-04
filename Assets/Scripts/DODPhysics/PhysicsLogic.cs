@@ -1,8 +1,4 @@
 using System;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace DODPhysics
@@ -66,8 +62,8 @@ namespace DODPhysics
 
         public static void AddWall(PhysicsData physicsData, Vector2 p1, Vector2 p2, Vector2 gravity)
         {
-            // p1 *= 100.0f;
-            // p2 *= 100.0f;
+            p1 *= 100.0f;
+            p2 *= 100.0f;
 
             physicsData.Shape[physicsData.ObjectCount] = SHAPE.WALL;
             physicsData.NumAxis[physicsData.ObjectCount] = 1;
@@ -92,6 +88,10 @@ namespace DODPhysics
 
         public static void AddBall(PhysicsData physicsData, Vector2 pos, Vector2 velocity, float radius, float mass, Vector2 gravity)
         {
+            pos *= 100.0f;
+            velocity *= 100.0f;
+            radius *= 100.0f;
+
             physicsData.Shape[physicsData.ObjectCount] = SHAPE.CIRCLE;
             physicsData.NumAxis[physicsData.ObjectCount] = 1;
 
@@ -108,9 +108,9 @@ namespace DODPhysics
 
         public static void AddRect(PhysicsData physicsData, Vector2 pos, Vector2 velocity, float width, float height, float mass, Vector2 gravity)
         {
-            // pos *= 100.0f;
-            // width *= 100.0f;
-            // height *= 100.0f;
+            pos *= 100.0f;
+            width *= 100.0f;
+            height *= 100.0f;
 
             physicsData.Shape[physicsData.ObjectCount] = SHAPE.RECTANGLE;
             physicsData.NumAxis[physicsData.ObjectCount] = 2;
@@ -123,7 +123,7 @@ namespace DODPhysics
 
             addCommon(physicsData, pos, velocity, mass, gravity);
 
-            Quaternion quaternion = Quaternion.Euler(0.0f, 0.0f, physicsData.Angle[physicsData.ObjectCount]);
+            Quaternion quaternion = Quaternion.Euler(0.0f, 0.0f, physicsData.Angle[physicsData.ObjectCount] * Mathf.Rad2Deg);
             physicsData.Direction[physicsData.ObjectCount] = quaternion * new Vector2(0.0f, 1.0f);
             physicsData.Vertices[physicsData.ObjectCount] = new Vector2[4];
             SetRectVertices(physicsData, physicsData.ObjectCount);
@@ -145,6 +145,7 @@ namespace DODPhysics
             physicsData.Elasticity[physicsData.ObjectCount] = 1.0f;
         }
 
+        static int frame = 0;
         public static unsafe void Tick(PhysicsData physicsData, float dt)
         {
             // bool* collisionHappened = stackalloc bool[physicsData.ObjectCount];
@@ -153,16 +154,17 @@ namespace DODPhysics
 
             for (int i = 0; i < physicsData.ObjectCount; i++)
             {
-                physicsData.Velocity[i] += physicsData.Gravity[i] * dt * 0.9f;
-                physicsData.Position[i] += physicsData.Velocity[i] * dt;
-                physicsData.Angle[i] += physicsData.AngularVelocity[i] * dt * Mathf.Rad2Deg;
+                // physicsData.Velocity[i] *= 0.9f;
+                physicsData.Velocity[i] += physicsData.Gravity[i];
+                physicsData.Position[i] += physicsData.Velocity[i] * dt * 60.0f;
+                physicsData.Angle[i] += physicsData.AngularVelocity[i] * dt * 60.0f;
 
-                Debug.Log(i + " " + physicsData.Shape.ToString() + " physicsData.Position " + physicsData.Position[i].ToString() + " physicsData.Velocity[i] " + physicsData.Velocity[i].ToString() + " physicsData.Angle " + physicsData.Angle.ToString());
-
+                //Debug.Log(frame + " " + i + " " + physicsData.Shape.ToString() + " physicsData.Position " + physicsData.Position[i].ToString() + " physicsData.Velocity[i] " + physicsData.Velocity[i].ToString() + " physicsData.Angle " + physicsData.Angle[i].ToString() + " physicsData.AngularVelocity " + physicsData.AngularVelocity[i]);
 
                 if (physicsData.Shape[i] == SHAPE.RECTANGLE)
                     SetRectVertices(physicsData, i);
             }
+            frame++;
 
             CollisionData* collisionData = stackalloc CollisionData[physicsData.ObjectCount];
             int rectCollisionDataCount = 0;
@@ -224,7 +226,8 @@ namespace DODPhysics
             float halfWidth = physicsData.RectWidth[idx] / 2.0f;
             float halfHeight = physicsData.RectHeight[idx] / 2.0f;
 
-            Quaternion quaternion = Quaternion.Euler(0.0f, 0.0f, physicsData.Angle[idx]);
+            Quaternion quaternion = Quaternion.Euler(0.0f, 0.0f, physicsData.Angle[idx] * Mathf.Rad2Deg);
+            physicsData.Direction[idx] = quaternion * new Vector2(0.0f, 1.0f);
 
             physicsData.Vertices[idx][0] = pos + (Vector2)(quaternion * new Vector3(-halfWidth, -halfHeight));
             physicsData.Vertices[idx][1] = pos + (Vector2)(quaternion * new Vector3(halfWidth, -halfHeight));
@@ -302,9 +305,9 @@ namespace DODPhysics
             float max;
             getMinMaxForAxis(physicsData, vertexRectIdx, smallestAxis, out min, out max, out collisionVertex);
 
-            Debug.Log(physicsData.Shape[idx1].ToString() + " pos " + idx1 + " " + physicsData.Position[idx1].ToString() + " " + physicsData.Shape[idx2].ToString() + " pos " + idx2 + " " + physicsData.Position[idx2].ToSafeString() + " collisionVertex " + collisionVertex.ToString());
+            // Debug.Log(physicsData.Shape[idx1].ToString() + " pos " + idx1 + " " + physicsData.Position[idx1].ToString() + " " + physicsData.Shape[idx2].ToString() + " pos " + idx2 + " " + physicsData.Position[idx2].ToSafeString() + " collisionVertex " + collisionVertex.ToString());
             // Debug.Log(physicsData.Shape[idx1].ToString() + " velocity " + physicsData.Velocity[idx1].ToString());
-            Debug.Log(physicsData.Shape[idx2].ToString() + " velocity " + physicsData.Velocity[idx2].ToString());
+            // Debug.Log(physicsData.Shape[idx2].ToString() + " velocity " + physicsData.Velocity[idx2].ToString());
             // Debug.Log(physicsData.Shape[idx1].ToString() + " direction " + physicsData.Direction[idx1].ToString());
             // Debug.Log(physicsData.Shape[idx2].ToString() + " direction " + physicsData.Direction[idx2].ToString());
             // Debug.Log(physicsData.Shape[idx1].ToString() + " angle " + physicsData.Angle[idx1].ToString());
@@ -314,6 +317,8 @@ namespace DODPhysics
             {
                 smallestAxis = smallestAxis * -1.0f;
             }
+
+            //Debug.Log("penetration " + satOutputData.Penetration + " axis " + satOutputData.Axis.ToString() + " collisionVertex " + satOutputData.CollisionVertex.ToString());
 
             satOutputData.Penetration = minOverlap;
             satOutputData.Axis = smallestAxis;
@@ -464,21 +469,22 @@ namespace DODPhysics
             float newSepVel = -sepVel * Mathf.Min(physicsData.Elasticity[idx1], physicsData.Elasticity[idx2]);
             float vsepDiff = newSepVel - sepVel;
 
+            float invMass1 = physicsData.InvMass[idx1];
+            float invMass2 = physicsData.InvMass[idx2];
+
             // let impulse = vsep_diff / (this.o1.inv_m + this.o2.inv_m + impAug1 + impAug2);
             // let impulseVec = this.normal.mult(impulse);
-            float impulse = vsepDiff / (physicsData.InvMass[idx1] + physicsData.InvMass[idx2] + impAug1 + impAug2);
+            float impulse = (invMass1 > 0.0f && invMass2 > 0.0f) ? vsepDiff / (invMass1 + invMass2 + impAug1 + impAug2) : 0.0f;
             // if (impulse > 0.0f && impulse < 1.0f)
             //     impulse = 1.1f;
             // else if (impulse < 0.0f && impulse < -1.0f)
             //     impulse = -1.1f;
-            Debug.Log("impulse " + impulse);
+            // Debug.Log("impulse " + impulse);
             Vector2 impulseVec = rectCollisionData.Perpendicular * impulse;
 
             // //3. Changing the velocities
             // this.o1.vel = this.o1.vel.add(impulseVec.mult(this.o1.inv_m));
             // this.o2.vel = this.o2.vel.add(impulseVec.mult(-this.o2.inv_m));
-            float invMass1 = physicsData.InvMass[idx1];
-            float invMass2 = physicsData.InvMass[idx2];
             // if (physicsData.Fixed[idx1])
             //     invMass2 = physicsData.InvMass[idx1] + physicsData.InvMass[idx2];
             // if (physicsData.Fixed[idx2])
@@ -492,7 +498,8 @@ namespace DODPhysics
             physicsData.AngularVelocity[idx1] += physicsData.InvInertia[idx1] * VectorCross2D(collArm1, impulseVec);
             physicsData.AngularVelocity[idx2] -= physicsData.InvInertia[idx2] * VectorCross2D(collArm2, impulseVec);
 
-            Debug.Log("physicsData.AngularVelocity[" + idx1 + "] " + physicsData.AngularVelocity[idx1] + " physicsData.AngularVelocity[" + idx2 + "] " + physicsData.AngularVelocity[idx2]);
+            // Debug.Log("physicsData.AngularVelocity[" + idx1 + "] " + physicsData.AngularVelocity[idx1]); 
+            // Debug.Log("physicsData.AngularVelocity[" + idx2 + "] " + physicsData.AngularVelocity[idx2]);
         }
 
 

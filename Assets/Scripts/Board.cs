@@ -56,10 +56,6 @@ public class Board : MonoBehaviour
         // addCircle(new Vector2(0.1f, 2.0f), new Vector2(0.0f, 0.0f), 0.5f, 1.0f);
         // addCircle(new Vector2(0.0f, 2.1f),  new Vector2(0.0f, 0.0f), 0.5f, 1.0f);
 
-        Vector2 p1 = new Vector2(0.1007806f, 3.109174f);
-        Vector2 p2 = new Vector2(0.02804411f, 3.194554f);
-        Vector2 p3 = new Vector2(0.03291607f, 3.133624f);
-
         int seed = 838587520;
         Debug.Log("seed " + seed);
         Random.InitState(seed);
@@ -89,10 +85,12 @@ public class Board : MonoBehaviour
         // addBox(WallLeftGO.transform.localPosition, WallLeftGO.transform.localScale.x, WallLeftGO.transform.localScale.y, Vector2.zero, 1000.0f, false);
         // addBox(WallRightGO.transform.localPosition, WallRightGO.transform.localScale.x, WallRightGO.transform.localScale.y, Vector2.zero, 1000.0f, false);
 
+        // floor = 0.0f;
+        // addWall(new Vector2(0.0f, floor), new Vector2(400.0f, floor)); // floor
         addWall(new Vector2(wallLeft, floor), new Vector2(wallRight, floor)); // floor
-        addWall(new Vector2(wallLeft, ceiling), new Vector2(wallRight, ceiling)); // ceiling
-        addWall(new Vector2(wallLeft, floor), new Vector2(wallLeft, ceiling)); // wall left
-        addWall(new Vector2(wallRight, floor), new Vector2(wallRight, ceiling)); // wall right
+        // addWall(new Vector2(wallLeft, ceiling), new Vector2(wallRight, ceiling)); // ceiling
+        // addWall(new Vector2(wallLeft, floor), new Vector2(wallLeft, ceiling)); // wall left
+        // addWall(new Vector2(wallRight, floor), new Vector2(wallRight, ceiling)); // wall right
 
         for (int i = 0; i < m_physicsData.ObjectCount; i++)
         {
@@ -100,21 +98,17 @@ public class Board : MonoBehaviour
             m_physicsData.Elasticity[i] = 0.9f;
         }
 
-        // addBox(new Vector2(1.05f, 1.2f), 0.1f, 0.4f, Vector2.zero, float.MaxValue, false);
-        // addBox(new Vector2(1.05f, 1.2f), 0.1f, 0.4f, Vector2.zero, float.MaxValue, false);
+        // addBox(new Vector2(0.5f, floor + 0.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
+        // addBox(new Vector2(1.45f, floor + 1.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
 
-        // addBox(new Vector2(0.0f, 0.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, true);
-        addBox(new Vector2(0.5f, floor + 0.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-        m_physicsData.AngularVelocity[m_physicsData.ObjectCount-1] = 0.0f;
-        m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
-        addBox(new Vector2(1.45f, floor + 1.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-        m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
-        // addBox(new Vector2(-2.0f, 0.0f), 0.4f, 0.4f, new Vector2(0.0f, 0.0f), 999.0f, true);
-        // m_physicsData.Fixed[1] = true;
-
-        // addBox(new Vector2(-2.0f, 0.0f), 0.4f, 0.4f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-         
-         //addBall(new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), 1.0f, 1.0f, Gravity);
+        addBox(new Vector2(1.0f, 1.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 1.0f;
+        m_physicsData.Velocity[m_physicsData.ObjectCount-1] = new Vector2(0.0f, 1.0f);
+        addBox(new Vector2(1.95f, 3.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 1.0f;
+        m_physicsData.Velocity[m_physicsData.ObjectCount-1] = new Vector2(0.0f, -1.0f);
 
 
     }
@@ -123,7 +117,7 @@ public class Board : MonoBehaviour
     void Update()
     {
         // double time = Time.realtimeSinceStartupAsDouble;
-        // PhysicsLogic.Tick(m_physicsData, Time.deltaTime);
+        PhysicsLogic.Tick(m_physicsData, Time.deltaTime);
         // Debug.Log(m_physicsData.CircleCount + " time " + (Time.realtimeSinceStartupAsDouble - time).ToString("G5"));
 
         // m_addTimer += Time.deltaTime;
@@ -138,10 +132,10 @@ public class Board : MonoBehaviour
         //     addBox(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, true);
         // }
 
-        if (Input.GetKeyUp(KeyCode.Space))
-        {
-            PhysicsLogic.Tick(m_physicsData, 1.0f / 60.0f);
-        }
+        // if (Input.GetKeyUp(KeyCode.Space))
+        // {
+        //     PhysicsLogic.Tick(m_physicsData, 1.0f / 60.0f);
+        // }
 
         // SATOutputData satOutputData;
         // if (PhysicsLogic.SeparatingAxisTheorem(m_physicsData, 0, 1, out satOutputData))
@@ -232,7 +226,7 @@ public class Board : MonoBehaviour
             {
                 Vector3[] vertices = m_rectMesh[i].vertices;
                 for (int v = 0; v < m_physicsData.Vertices[i].Length; v++)
-                    vertices[v] = m_physicsData.Vertices[i][v];// / 100.0f;
+                    vertices[v] = m_physicsData.Vertices[i][v] / 100.0f;
                 m_rectMesh[i].SetVertices(vertices);
             }
         }
