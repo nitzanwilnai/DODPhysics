@@ -5,37 +5,40 @@ using UnityEngine;
 
 namespace DODPhysics
 {
+    public enum SHAPE { WALL, CIRCLE, RECTANGLE };
     public class PhysicsData
     {
-        public float Gravity;
-
         public float WallLeft;
         public float WallRight;
         public float Floor;
         public float Ceiling;
 
         // circles
-        public int MaxCircles;
-        public int CircleCount;
         public float[] CircleRadius;
-        public Vector2[] CirclePosition;
-        public Vector2[] CircleDirection;
-        public float[] CircleMass;
 
-        public int MaxRects;
-        public int RectCount;
+        // rect
         public float[] RectWidth;
         public float[] RectHeight;
-        public Vector2[] RectVertices;
-        public Vector2[] RectPosition;
-        public Vector2[] RectDirection;
-        public Vector2[] RectVelocity;
-        public float[] RectAngle;
-        public float[] RectAngularVelocity;
-        public float[] RectMass;
-        public float[] RectInvMass;
-        public float[] RectInertia;
-        public float[] RectInvInertia;
-        public float[] RectElasticity;
+
+        // common
+        public int MaxObjects;
+        public int ObjectCount;
+        public SHAPE[] Shape;
+        public Vector2[][] Vertices;
+        public int[] NumAxis;
+
+        public Vector2[] Gravity;
+        public int[] UnFixedIdxs;
+
+        public Vector2[] Position;
+        public Vector2[] Direction;
+        public Vector2[] Velocity;
+        public float[] Angle;
+        public float[] AngularVelocity;
+        public float[] Mass;
+        public float[] InvMass;
+        public float[] Inertia;
+        public float[] InvInertia;
+        public float[] Elasticity;
     }
 }

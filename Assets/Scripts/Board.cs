@@ -5,20 +5,22 @@ using DODPhysics;
 
 public class Board : MonoBehaviour
 {
+    public Camera Camera;
+
     PhysicsData m_physicsData = new PhysicsData();
     public GameObject FloorGO;
     public GameObject CeilingGO;
     public GameObject WallLeftGO;
     public GameObject WallRightGO;
 
-    public float Gravity;
+    public Vector2 Gravity;
+
+    public int MaxObjects;
 
     public GameObject CirclePrefab;
-    public int MaxCircles;
     GameObject[] m_circlesGO;
 
     public GameObject RectPrefab;
-    public int MaxRects;
     public GameObject[] m_rectGO;
     public Mesh[] m_rectMesh;
 
@@ -30,19 +32,23 @@ public class Board : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        m_physicsData.Floor = FloorGO.transform.localPosition.y + FloorGO.transform.localScale.y / 2.0f;
-        m_physicsData.Ceiling = CeilingGO.transform.localPosition.y + CeilingGO.transform.localScale.y / 2.0f;
-        m_physicsData.WallLeft = WallLeftGO.transform.localPosition.x + WallLeftGO.transform.localScale.x / 2.0f;
-        m_physicsData.WallRight = WallRightGO.transform.localPosition.x - WallRightGO.transform.localScale.x / 2.0f;
+        float floor = FloorGO.transform.localPosition.y + FloorGO.transform.localScale.y / 2.0f;
+        float ceiling = CeilingGO.transform.localPosition.y + CeilingGO.transform.localScale.y / 2.0f;
+        float wallLeft = WallLeftGO.transform.localPosition.x + WallLeftGO.transform.localScale.x / 2.0f;
+        float wallRight = WallRightGO.transform.localPosition.x - WallRightGO.transform.localScale.x / 2.0f;
 
-        m_physicsData.Gravity = Gravity;
+        m_physicsData.Floor = floor;
+        m_physicsData.Ceiling = ceiling;
+        m_physicsData.WallLeft = wallLeft;
+        m_physicsData.WallRight = wallRight;
 
-        m_circlesGO = new GameObject[MaxCircles];
-        m_rectGO = new GameObject[MaxRects];
-        m_rectMesh = new Mesh[MaxRects];
+        m_circlesGO = new GameObject[MaxObjects];
+        m_rectGO = new GameObject[MaxObjects];
+        m_rectMesh = new Mesh[MaxObjects];
 
-        PhysicsLogic.AllocatePhysicsCircles(m_physicsData, MaxCircles);
-        PhysicsLogic.AllocatePhysicsRects(m_physicsData, MaxRects);
+        PhysicsLogic.AllocatePhysics(m_physicsData, MaxObjects);
+
+        // PhysicsLogic.AddLine(m_physicsData, new Vector2(wallLeft, floor), new Vector2(wallRight, floor));
 
         // addCircle(new Vector2(-1.5f, -2.0f), new Vector2(0.0f, 0.0f), 0.5f, 999.0f);
         // addCircle(new Vector2(-1.6f, 2.0f),  new Vector2(0.0f, -1.0f), 0.25f, 1.0f);
@@ -60,29 +66,65 @@ public class Board : MonoBehaviour
         // for (int i = 0; i < 30; i++)
         //     addCircle();
 
-// let Box1 = new Box(200, 200, 240, 200, 20, 1);
-// let Box2 = new Box(100, 200, 120, 200, 40, 1);
+        // RECTANGLE pos 0 (2.009793,2.1) CIRCLE pos 2 (-7.606146,2.567009) collisionVertex (1.810378,1.998839)
 
-        // AddRect(new Vector2(0.9f, 1.2f), 0.2f, 0.4f, new Vector2(0.0f, 1.0f));
-        // AddRect(new Vector2(0.9f, 2.6f), 0.2f, 0.4f, new Vector2(0.0f, 0.0f));
+        // TEST1
+        // let Box1 = new Box(200, 200, 240, 200, 20, 1);
+        // let Box2 = new Box(100, 200, 120, 200, 40, 1);
+        // addRect(new Vector2(2.1f, 2.1f), 0.4f, 0.2f, new Vector2(-1.0f, 0.0f));
+        // addRect(new Vector2(0.9f, 2.2f), 0.2f, 0.4f, Vector2.zero);
+        // addCircle(new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), 0.25f, 1.0f);
+        // addRect(new Vector2(2.2f, 0.0f), 0.4f, 0.2f, new Vector2(-1.0f, 0.0f));
 
-        // AddRect(new Vector2(0.0f, 1.0f), 1.0f, 2.0f, new Vector2(0.0f, 0.0f));
-        // AddRect(new Vector2(0.0f, -1.0f), 1.0f, 2.0f, new Vector2(0.0f, 1.0f));
+        // TEST2 - was causing collision
+        // addCircle(new Vector2(-8.51f, 3.75f), new Vector2(0.0f, 0.0f), 0.25f, 1.0f);
+        // addRect(new Vector2(2.55f, 2.03f), 0.4f, 0.2f, new Vector2(-1.0f, 0.0f));
+        // m_physicsData.Velocity[0] = new Vector2(0.34f, 1.32f);
+        // m_physicsData.Velocity[1] = new Vector2(-0.99f, 0.12f);
+        // m_physicsData.Angle[0] = 142.3341f;
+        // m_physicsData.Angle[1] = 55.20527f;
 
-        AddRect(new Vector2(2.2f, 2.1f), 0.4f, 0.2f, new Vector2(-1.0f, 0.0f));
-        AddRect(new Vector2(1.1f, 2.2f), 0.2f, 0.4f, Vector2.zero);
+        // addBox(FloorGO.transform.localPosition, FloorGO.transform.localScale.x, FloorGO.transform.localScale.y, Vector2.zero, 1.0f, false);
+        // addBox(CeilingGO.transform.localPosition, CeilingGO.transform.localScale.x, CeilingGO.transform.localScale.y, Vector2.zero, 1000.0f, false);
+        // addBox(WallLeftGO.transform.localPosition, WallLeftGO.transform.localScale.x, WallLeftGO.transform.localScale.y, Vector2.zero, 1000.0f, false);
+        // addBox(WallRightGO.transform.localPosition, WallRightGO.transform.localScale.x, WallRightGO.transform.localScale.y, Vector2.zero, 1000.0f, false);
 
-        // AddRect(new Vector2(0.0f, 0.0f), 2.0f, 1.0f);
-        // AddRect(new Vector2(0.0f, 0.0f), 1.0f, 2.0f);
+        addWall(new Vector2(wallLeft, floor), new Vector2(wallRight, floor)); // floor
+        addWall(new Vector2(wallLeft, ceiling), new Vector2(wallRight, ceiling)); // ceiling
+        addWall(new Vector2(wallLeft, floor), new Vector2(wallLeft, ceiling)); // wall left
+        addWall(new Vector2(wallRight, floor), new Vector2(wallRight, ceiling)); // wall right
+
+        for (int i = 0; i < m_physicsData.ObjectCount; i++)
+        {
+            // m_physicsData.Fixed[i] = true;
+            m_physicsData.Elasticity[i] = 0.9f;
+        }
+
+        // addBox(new Vector2(1.05f, 1.2f), 0.1f, 0.4f, Vector2.zero, float.MaxValue, false);
+        // addBox(new Vector2(1.05f, 1.2f), 0.1f, 0.4f, Vector2.zero, float.MaxValue, false);
+
+        // addBox(new Vector2(0.0f, 0.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, true);
+        addBox(new Vector2(0.5f, floor + 0.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        m_physicsData.AngularVelocity[m_physicsData.ObjectCount-1] = 0.0f;
+        m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
+        addBox(new Vector2(1.45f, floor + 1.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
+        // addBox(new Vector2(-2.0f, 0.0f), 0.4f, 0.4f, new Vector2(0.0f, 0.0f), 999.0f, true);
+        // m_physicsData.Fixed[1] = true;
+
+        // addBox(new Vector2(-2.0f, 0.0f), 0.4f, 0.4f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+         
+         //addBall(new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), 1.0f, 1.0f, Gravity);
+
+
     }
 
     // Update is called once per frame
     void Update()
     {
         // double time = Time.realtimeSinceStartupAsDouble;
-        PhysicsLogic.Tick(m_physicsData, Time.deltaTime);
+        // PhysicsLogic.Tick(m_physicsData, Time.deltaTime);
         // Debug.Log(m_physicsData.CircleCount + " time " + (Time.realtimeSinceStartupAsDouble - time).ToString("G5"));
-        ShowVisual(m_physicsData);
 
         // m_addTimer += Time.deltaTime;
         // if (m_addTimer > m_addTime)
@@ -93,54 +135,30 @@ public class Board : MonoBehaviour
 
         // if (Input.GetMouseButtonUp(0))
         // {
-        //     addCircle();
+        //     addBox(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, true);
         // }
 
-        if (Input.GetKey(KeyCode.LeftArrow))
+        if (Input.GetKeyUp(KeyCode.Space))
         {
-            m_physicsData.RectAngle[0]++;
-            PhysicsLogic.RotateRect(m_physicsData, 0);
-        }
-        if (Input.GetKey(KeyCode.RightArrow))
-        {
-            m_physicsData.RectAngle[0]--;
-            PhysicsLogic.RotateRect(m_physicsData, 0);
-        }
-        if (Input.GetKeyUp(KeyCode.W))
-        {
-            m_physicsData.RectPosition[0].y += 0.1f;
-            PhysicsLogic.RotateRect(m_physicsData, 0);
-        }
-        if (Input.GetKeyUp(KeyCode.S))
-        {
-            m_physicsData.RectPosition[0].y -= 0.1f;
-            PhysicsLogic.RotateRect(m_physicsData, 0);
-        }
-        if (Input.GetKeyUp(KeyCode.A))
-        {
-            m_physicsData.RectPosition[0].x -= 0.1f;
-            PhysicsLogic.RotateRect(m_physicsData, 0);
-        }
-        if (Input.GetKeyUp(KeyCode.D))
-        {
-            m_physicsData.RectPosition[0].x += 0.1f;
-            PhysicsLogic.RotateRect(m_physicsData, 0);
+            PhysicsLogic.Tick(m_physicsData, 1.0f / 60.0f);
         }
 
-        SATOutputData satOutputData;
-        if (PhysicsLogic.SeparatingAxisTheorem(m_physicsData, 0, 1, out satOutputData))
-        {
-            m_rectGO[0].GetComponent<MeshRenderer>().material.color = Color.red;
-            m_rectGO[1].GetComponent<MeshRenderer>().material.color = Color.red;
-        }
-        else
-        {
-            m_rectGO[0].GetComponent<MeshRenderer>().material.color = Color.white;
-            m_rectGO[1].GetComponent<MeshRenderer>().material.color = Color.white;
-        }
+        // SATOutputData satOutputData;
+        // if (PhysicsLogic.SeparatingAxisTheorem(m_physicsData, 0, 1, out satOutputData))
+        // {
+        //     m_rectGO[0].GetComponent<MeshRenderer>().material.color = Color.red;
+        //     m_rectGO[1].GetComponent<MeshRenderer>().material.color = Color.red;
+        // }
+        // else
+        // {
+        //     m_rectGO[0].GetComponent<MeshRenderer>().material.color = Color.white;
+        //     m_rectGO[1].GetComponent<MeshRenderer>().material.color = Color.white;
+        // }
+
+        ShowVisual(m_physicsData);
     }
 
-    void addCircle()
+    void addBall()
     {
         float radius = Random.value + 0.25f;
         radius = 0.25f;
@@ -151,57 +169,72 @@ public class Board : MonoBehaviour
         Vector2 pos = new Vector2(posX, posY);
         pos = new Vector2(Random.value * 4.0f - 2.0f, Random.value * 3.0f + 1.0f);
         Vector2 dir = Vector2.zero;
-        addCircle(pos, dir, radius, radius);
+        addBall(pos, dir, radius, radius, Gravity);
     }
 
-    private void addCircle(Vector2 pos, Vector2 dir, float radius, float mass)
+    private void addWall(Vector2 p1, Vector2 p2)
     {
-        if (m_physicsData.CircleCount < m_physicsData.MaxCircles)
-        {
-            m_circlesGO[m_physicsData.CircleCount] = Instantiate(CirclePrefab);
-            m_circlesGO[m_physicsData.CircleCount].GetComponent<SpriteRenderer>().color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
-            m_circlesGO[m_physicsData.CircleCount].transform.localPosition = pos;
-            m_circlesGO[m_physicsData.CircleCount].transform.localScale = new Vector3(radius * 2.0f, radius * 2.0f, 1.0f);
+        PhysicsLogic.AddWall(m_physicsData, p1, p2, Vector2.zero);
 
-            PhysicsLogic.AddCircle(m_physicsData, pos, dir, radius, mass);
+        GameObject go = Instantiate(RectPrefab);
+        m_rectGO[m_physicsData.ObjectCount] = go;
+        MeshFilter meshFilter = go.AddComponent<MeshFilter>();
+        MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
+        meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
+        Mesh mesh = new Mesh();
+        mesh.vertices = new Vector3[4];
+        int[] triangles = { 0, 3, 2, 0, 2, 1 };
+        mesh.triangles = triangles;
+        meshFilter.mesh = mesh;
+        m_rectMesh[m_physicsData.ObjectCount] = mesh;
+    }
+
+    private void addBall(Vector2 pos, Vector2 velocity, float radius, float mass, Vector2 gravity)
+    {
+        if (m_physicsData.ObjectCount < m_physicsData.MaxObjects)
+        {
+            m_circlesGO[m_physicsData.ObjectCount] = Instantiate(CirclePrefab);
+            m_circlesGO[m_physicsData.ObjectCount].GetComponent<SpriteRenderer>().color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+            m_circlesGO[m_physicsData.ObjectCount].transform.localPosition = pos;
+            m_circlesGO[m_physicsData.ObjectCount].transform.localScale = new Vector3(radius * 2.0f, radius * 2.0f, 1.0f);
+
+            PhysicsLogic.AddBall(m_physicsData, pos, velocity, radius, mass, gravity);
         }
     }
 
-    private void AddRect(Vector2 pos, float width, float height, Vector2 velocity)
+    private void addBox(Vector2 pos, float width, float height, Vector2 velocity, float mass, Vector2 gravity)
     {
         GameObject go = Instantiate(RectPrefab);
-        m_rectGO[m_physicsData.RectCount] = go;
+        m_rectGO[m_physicsData.ObjectCount] = go;
 
         MeshFilter meshFilter = go.AddComponent<MeshFilter>();
         MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
         Mesh mesh = new Mesh();
         mesh.vertices = new Vector3[4];
-        int[] triangles = { 0, 1, 2, 0, 2, 3 };
+        int[] triangles = { 0, 3, 2, 0, 2, 1 };
+        // int[] triangles = { 0, 1, 2, 0, 2, 3 };
         mesh.triangles = triangles;
         meshFilter.mesh = mesh;
-        m_rectMesh[m_physicsData.RectCount] = mesh;
+        m_rectMesh[m_physicsData.ObjectCount] = mesh;
 
-        PhysicsLogic.AddRect(m_physicsData, pos, velocity, width, height, 1.0f);
+        PhysicsLogic.AddRect(m_physicsData, pos, velocity, width, height, mass, gravity);
         //PhysicsLogic.RotateRect(m_physicsData, 0);
     }
 
     void ShowVisual(PhysicsData physicsData)
     {
-        for (int i = 0; i < physicsData.CircleCount; i++)
+        for (int i = 0; i < physicsData.ObjectCount; i++)
         {
-            m_circlesGO[i].transform.localPosition = physicsData.CirclePosition[i];
-        }
-
-        for (int i = 0; i < physicsData.RectCount; i++)
-        {
-            Vector3[] vertices = m_rectMesh[i].vertices;
-
-            for (int v = 0; v < 4; v++)
-                vertices[v] = m_physicsData.RectVertices[i * 4 + v];
-
-            m_rectMesh[i].SetVertices(vertices);
-            // m_rectGO[i].GetComponent<MeshFilter>().mesh.SetVertices(vertices);
+            if (physicsData.Shape[i] == SHAPE.CIRCLE)
+                m_circlesGO[i].transform.localPosition = physicsData.Position[i];
+            else if (m_physicsData.Shape[i] == SHAPE.RECTANGLE)
+            {
+                Vector3[] vertices = m_rectMesh[i].vertices;
+                for (int v = 0; v < m_physicsData.Vertices[i].Length; v++)
+                    vertices[v] = m_physicsData.Vertices[i][v];// / 100.0f;
+                m_rectMesh[i].SetVertices(vertices);
+            }
         }
 
     }
