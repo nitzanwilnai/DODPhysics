@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using DODPhysics;
 
@@ -14,6 +12,7 @@ public class Board : MonoBehaviour
     public GameObject WallRightGO;
 
     public Vector2 Gravity;
+    public float Friction;
 
     public int MaxObjects;
 
@@ -37,16 +36,11 @@ public class Board : MonoBehaviour
         float wallLeft = WallLeftGO.transform.localPosition.x + WallLeftGO.transform.localScale.x / 2.0f;
         float wallRight = WallRightGO.transform.localPosition.x - WallRightGO.transform.localScale.x / 2.0f;
 
-        m_physicsData.Floor = floor;
-        m_physicsData.Ceiling = ceiling;
-        m_physicsData.WallLeft = wallLeft;
-        m_physicsData.WallRight = wallRight;
-
         m_circlesGO = new GameObject[MaxObjects];
         m_rectGO = new GameObject[MaxObjects];
         m_rectMesh = new Mesh[MaxObjects];
 
-        PhysicsLogic.AllocatePhysics(m_physicsData, MaxObjects);
+        PhysicsLogic.AllocatePhysics(m_physicsData, MaxObjects, Friction);
 
         // PhysicsLogic.AddLine(m_physicsData, new Vector2(wallLeft, floor), new Vector2(wallRight, floor));
 
@@ -86,21 +80,26 @@ public class Board : MonoBehaviour
         // addBox(WallRightGO.transform.localPosition, WallRightGO.transform.localScale.x, WallRightGO.transform.localScale.y, Vector2.zero, 1000.0f, false);
 
         // floor = 0.0f;
-        addWall(new Vector2(0.0f, floor), new Vector2(400.0f, floor)); // floor
-        // addWall(new Vector2(wallLeft, floor), new Vector2(wallRight, floor)); // floor
-        // addWall(new Vector2(wallLeft, ceiling), new Vector2(wallRight, ceiling)); // ceiling
-        // addWall(new Vector2(wallLeft, floor), new Vector2(wallLeft, ceiling)); // wall left
-        // addWall(new Vector2(wallRight, floor), new Vector2(wallRight, ceiling)); // wall right
+        // addWall(new Vector2(0.0f, floor), new Vector2(400.0f, floor)); // floor
+        addWall(new Vector2(wallLeft, floor), new Vector2(wallRight, floor)); // floor
+        addWall(new Vector2(wallLeft, ceiling), new Vector2(wallRight, ceiling)); // ceiling
+        addWall(new Vector2(wallLeft, floor), new Vector2(wallLeft, ceiling)); // wall left
+        addWall(new Vector2(wallRight, floor), new Vector2(wallRight, ceiling)); // wall right
 
         for (int i = 0; i < m_physicsData.ObjectCount; i++)
-        {
-            // m_physicsData.Fixed[i] = true;
-            m_physicsData.Elasticity[i] = 0.9f;
-        }
+            m_physicsData.Elasticity[i] = 0.8f;
 
-        addBox(new Vector2(1.0f, floor + 0.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        m_physicsData.Floor = floor * 100.0f;
+        m_physicsData.Ceiling = ceiling * 100.0f;
+        m_physicsData.WallLeft = wallLeft * 100.0f;
+        m_physicsData.WallRight = wallRight * 100.0f;
+
+
+        // addBall(new Vector2(0.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.5f, 1.0f, new Vector2(0.0f, -0.1f));
+
+        // addBox(new Vector2(1.0f, floor + 0.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
         // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
-        addBox(new Vector2(1.95f, floor + 1.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        // addBox(new Vector2(1.95f, floor + 1.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
         // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
 
         // addBox(new Vector2(1.0f, 1.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
@@ -127,10 +126,20 @@ public class Board : MonoBehaviour
         //     addCircle();
         // }
 
-        // if (Input.GetMouseButtonUp(0))
-        // {
-        //     addBox(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, true);
-        // }
+        if (Input.GetMouseButtonUp(0))
+        {
+            // if (Random.value < 0.5f)
+            //     addBox(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), 0.5f, 0.5f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+            // else
+            addBall(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.5f, 1.0f, Gravity);
+        }
+
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            for (int i = 0; i < m_physicsData.ObjectCount; i++)
+                m_physicsData.Gravity[i] = Vector2.zero;
+        }
+
 
         // if (Input.GetKeyUp(KeyCode.Space))
         // {
@@ -152,19 +161,19 @@ public class Board : MonoBehaviour
         ShowVisual(m_physicsData);
     }
 
-    void addBall()
-    {
-        float radius = Random.value + 0.25f;
-        radius = 0.25f;
-        float minX = m_physicsData.WallLeft + radius;
-        float maxX = m_physicsData.WallRight - radius;
-        float posX = Random.value * (maxX - minX) + minX;
-        float posY = 9.0f;
-        Vector2 pos = new Vector2(posX, posY);
-        pos = new Vector2(Random.value * 4.0f - 2.0f, Random.value * 3.0f + 1.0f);
-        Vector2 dir = Vector2.zero;
-        addBall(pos, dir, radius, radius, Gravity);
-    }
+    // void addBall()
+    // {
+    //     float radius = Random.value + 0.25f;
+    //     radius = 0.25f;
+    //     float minX = m_physicsData.WallLeft + radius;
+    //     float maxX = m_physicsData.WallRight - radius;
+    //     float posX = Random.value * (maxX - minX) + minX;
+    //     float posY = 9.0f;
+    //     Vector2 pos = new Vector2(posX, posY);
+    //     pos = new Vector2(Random.value * 4.0f - 2.0f, Random.value * 3.0f + 1.0f);
+    //     Vector2 dir = Vector2.zero;
+    //     addBall(pos, dir, radius, radius, Gravity);
+    // }
 
     private void addWall(Vector2 p1, Vector2 p2)
     {
@@ -198,22 +207,25 @@ public class Board : MonoBehaviour
 
     private void addBox(Vector2 pos, float width, float height, Vector2 velocity, float mass, Vector2 gravity)
     {
-        GameObject go = Instantiate(RectPrefab);
-        m_rectGO[m_physicsData.ObjectCount] = go;
+        if (m_physicsData.ObjectCount < m_physicsData.MaxObjects)
+        {
+            GameObject go = Instantiate(RectPrefab);
+            m_rectGO[m_physicsData.ObjectCount] = go;
 
-        MeshFilter meshFilter = go.AddComponent<MeshFilter>();
-        MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
-        meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
-        Mesh mesh = new Mesh();
-        mesh.vertices = new Vector3[4];
-        int[] triangles = { 0, 3, 2, 0, 2, 1 };
-        // int[] triangles = { 0, 1, 2, 0, 2, 3 };
-        mesh.triangles = triangles;
-        meshFilter.mesh = mesh;
-        m_rectMesh[m_physicsData.ObjectCount] = mesh;
+            MeshFilter meshFilter = go.AddComponent<MeshFilter>();
+            MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
+            meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
+            meshRenderer.sharedMaterial.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+            Mesh mesh = new Mesh();
+            mesh.vertices = new Vector3[4];
+            int[] triangles = { 0, 3, 2, 0, 2, 1 };
+            // int[] triangles = { 0, 1, 2, 0, 2, 3 };
+            mesh.triangles = triangles;
+            meshFilter.mesh = mesh;
+            m_rectMesh[m_physicsData.ObjectCount] = mesh;
 
-        PhysicsLogic.AddRect(m_physicsData, pos, velocity, width, height, mass, gravity);
-        //PhysicsLogic.RotateRect(m_physicsData, 0);
+            PhysicsLogic.AddRect(m_physicsData, pos, velocity, width, height, mass, gravity);
+        }
     }
 
     void ShowVisual(PhysicsData physicsData)
@@ -221,7 +233,7 @@ public class Board : MonoBehaviour
         for (int i = 0; i < physicsData.ObjectCount; i++)
         {
             if (physicsData.Shape[i] == SHAPE.CIRCLE)
-                m_circlesGO[i].transform.localPosition = physicsData.Position[i];
+                m_circlesGO[i].transform.localPosition = physicsData.Position[i] / 100.0f;
             else if (m_physicsData.Shape[i] == SHAPE.RECTANGLE)
             {
                 Vector3[] vertices = m_rectMesh[i].vertices;

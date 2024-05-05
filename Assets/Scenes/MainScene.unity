@@ -333,8 +333,9 @@ MonoBehaviour:
   CeilingGO: {fileID: 1358264000}
   WallLeftGO: {fileID: 1987222840}
   WallRightGO: {fileID: 621459981}
-  Gravity: {x: 0, y: 0}
-  MaxObjects: 10
+  Gravity: {x: 0, y: -0.981}
+  Friction: 0.2
+  MaxObjects: 100
   CirclePrefab: {fileID: 4370648107398221539, guid: a759ebc28f15b4644800d76c64166161, type: 3}
   RectPrefab: {fileID: 6157332151122663656, guid: 34c5c56d6ab6e4d9e82138f356c22bc5, type: 3}
   m_rectGO: []

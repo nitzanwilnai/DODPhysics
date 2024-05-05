@@ -20,6 +20,8 @@ namespace DODPhysics
         public float[] RectWidth;
         public float[] RectHeight;
 
+        public float Friction;
+
         // common
         public int MaxObjects;
         public int ObjectCount;

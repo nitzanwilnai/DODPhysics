@@ -32,13 +32,15 @@ namespace DODPhysics
 
     public static class PhysicsLogic
     {
-        public static void AllocatePhysics(PhysicsData physicsData, int maxObjects)
+        public static void AllocatePhysics(PhysicsData physicsData, int maxObjects, float friction)
         {
             physicsData.MaxObjects = maxObjects;
             physicsData.ObjectCount = 0;
             physicsData.Shape = new SHAPE[maxObjects];
             physicsData.Vertices = new Vector2[maxObjects][];
             physicsData.NumAxis = new int[maxObjects];
+
+            physicsData.Friction = friction;
 
             physicsData.Gravity = new Vector2[maxObjects];
 
@@ -128,6 +130,8 @@ namespace DODPhysics
             physicsData.Vertices[physicsData.ObjectCount] = new Vector2[4];
             SetRectVertices(physicsData, physicsData.ObjectCount);
 
+            physicsData.Elasticity[physicsData.ObjectCount] = 0.9f;
+
             physicsData.ObjectCount++;
 
         }
@@ -145,6 +149,9 @@ namespace DODPhysics
             physicsData.Elasticity[physicsData.ObjectCount] = 1.0f;
         }
 
+        static float maxVel = 0.0f;
+        static float maxAngVel = 0.0f;
+
         static int frame = 0;
         public static unsafe void Tick(PhysicsData physicsData, float dt)
         {
@@ -152,22 +159,46 @@ namespace DODPhysics
             // for (int i = 0; i < physicsData.ObjectCount; i++)
             //     collisionHappened[i] = false;
 
+
             for (int i = 0; i < physicsData.ObjectCount; i++)
             {
                 // physicsData.Velocity[i] *= 0.9f;
-                physicsData.Velocity[i] += physicsData.Gravity[i];
-                physicsData.Velocity[i] *= 0.9f;
-                physicsData.Position[i] += physicsData.Velocity[i] * dt * 60.0f;
-                physicsData.Angle[i] += physicsData.AngularVelocity[i] * dt * 60.0f;
+                if (physicsData.Shape[i] == SHAPE.CIRCLE)
+                {
+                    Debug.Log(frame + " physicsData.Velocity[" + i + "] " + physicsData.Velocity[i] + " start");
+                    physicsData.Velocity[i] *= 1.0f - physicsData.Friction;
+                    Debug.Log(frame + " physicsData.Velocity[" + i + "] " + physicsData.Velocity[i] + " post friction");
+                    physicsData.Velocity[i] += physicsData.Gravity[i];
+                    Debug.Log(frame + " physicsData.Velocity[" + i + "] " + physicsData.Velocity[i] + " post gravity");
+                    physicsData.Position[i] += physicsData.Velocity[i] * dt * 60.0f;
+                    Debug.Log(frame + " physicsData.Position[" + i + "] " + physicsData.Position[i]);
+                    physicsData.Angle[i] += physicsData.AngularVelocity[i] * dt * 60.0f;
 
-                Debug.Log(frame + " " + i + " " + physicsData.Shape[i].ToString() + " physicsData.Position " + physicsData.Position[i].ToString() + " physicsData.Velocity[i] " + physicsData.Velocity[i].ToString() + " physicsData.Angle " + physicsData.Angle[i].ToString() + " physicsData.AngularVelocity " + physicsData.AngularVelocity[i]);
+                    if (physicsData.Position[i].x < physicsData.WallLeft)
+                        physicsData.Position[i].x = physicsData.WallLeft + 1.0f;
+                    if (physicsData.Position[i].x > physicsData.WallRight)
+                        physicsData.Position[i].x = physicsData.WallRight - 1.0f;
+                    if (physicsData.Position[i].y < physicsData.Floor)
+                        physicsData.Position[i].y = physicsData.Floor + 1.0f;
+                    if (physicsData.Position[i].y > physicsData.Ceiling)
+                        physicsData.Position[i].y = physicsData.Ceiling - 1.0f;
+                }
+
+                // Debug.Log(frame + " " + i + " " + physicsData.Shape[i].ToString() + " physicsData.Position " + physicsData.Position[i].ToString() + " physicsData.Velocity[i] " + physicsData.Velocity[i].ToString() + " physicsData.Angle " + physicsData.Angle[i].ToString() + " physicsData.AngularVelocity " + physicsData.AngularVelocity[i]);
+                // if (physicsData.Velocity[i].magnitude > maxVel)
+                //     maxVel = physicsData.Velocity[i].magnitude;
+                // if (physicsData.AngularVelocity[i] > maxAngVel)
+                //     maxAngVel = physicsData.AngularVelocity[i];
 
                 if (physicsData.Shape[i] == SHAPE.RECTANGLE)
                     SetRectVertices(physicsData, i);
             }
             frame++;
 
-            CollisionData* collisionData = stackalloc CollisionData[physicsData.ObjectCount];
+            // Debug.Log("maxVel " + maxVel + " maxAngVel " + maxAngVel);
+
+            int collisionDataSize = physicsData.ObjectCount * 10;
+            CollisionData* collisionData = stackalloc CollisionData[collisionDataSize];
             int rectCollisionDataCount = 0;
             for (int i1 = 0; i1 < physicsData.ObjectCount - 1; i1++)
             {
@@ -176,8 +207,10 @@ namespace DODPhysics
                     if (physicsData.Shape[i1] != SHAPE.WALL || physicsData.Shape[i2] != SHAPE.WALL)
                     {
                         SATOutputData satOutputData;
-                        if (SeparatingAxisTheorem(physicsData, i1, i2, out satOutputData))
+                        if (SeparatingAxisTheorem(physicsData, i1, i2, out satOutputData) && rectCollisionDataCount < physicsData.ObjectCount)
                             collisionData[rectCollisionDataCount++] = new CollisionData(i1, i2, satOutputData.Axis, satOutputData.Penetration, satOutputData.CollisionVertex);
+                        if (rectCollisionDataCount >= collisionDataSize)
+                            Debug.LogError("rectCollisionDataCount" + rectCollisionDataCount + " physicsData.ObjectCount " + physicsData.ObjectCount);
                     }
                 }
             }
