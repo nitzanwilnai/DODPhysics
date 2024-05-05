@@ -86,8 +86,8 @@ public class Board : MonoBehaviour
         // addBox(WallRightGO.transform.localPosition, WallRightGO.transform.localScale.x, WallRightGO.transform.localScale.y, Vector2.zero, 1000.0f, false);
 
         // floor = 0.0f;
-        // addWall(new Vector2(0.0f, floor), new Vector2(400.0f, floor)); // floor
-        addWall(new Vector2(wallLeft, floor), new Vector2(wallRight, floor)); // floor
+        addWall(new Vector2(0.0f, floor), new Vector2(400.0f, floor)); // floor
+        // addWall(new Vector2(wallLeft, floor), new Vector2(wallRight, floor)); // floor
         // addWall(new Vector2(wallLeft, ceiling), new Vector2(wallRight, ceiling)); // ceiling
         // addWall(new Vector2(wallLeft, floor), new Vector2(wallLeft, ceiling)); // wall left
         // addWall(new Vector2(wallRight, floor), new Vector2(wallRight, ceiling)); // wall right
@@ -98,17 +98,17 @@ public class Board : MonoBehaviour
             m_physicsData.Elasticity[i] = 0.9f;
         }
 
-        // addBox(new Vector2(0.5f, floor + 0.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        addBox(new Vector2(1.0f, floor + 0.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
         // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
-        // addBox(new Vector2(1.45f, floor + 1.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        addBox(new Vector2(1.95f, floor + 1.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
         // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
 
-        addBox(new Vector2(1.0f, 1.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-        m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 1.0f;
-        m_physicsData.Velocity[m_physicsData.ObjectCount-1] = new Vector2(0.0f, 1.0f);
-        addBox(new Vector2(1.95f, 3.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-        m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 1.0f;
-        m_physicsData.Velocity[m_physicsData.ObjectCount-1] = new Vector2(0.0f, -1.0f);
+        // addBox(new Vector2(1.0f, 1.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 1.0f;
+        // m_physicsData.Velocity[m_physicsData.ObjectCount-1] = new Vector2(0.0f, 1.0f);
+        // addBox(new Vector2(1.95f, 3.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 1.0f;
+        // m_physicsData.Velocity[m_physicsData.ObjectCount-1] = new Vector2(0.0f, -1.0f);
 
 
     }

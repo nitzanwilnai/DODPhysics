@@ -156,10 +156,11 @@ namespace DODPhysics
             {
                 // physicsData.Velocity[i] *= 0.9f;
                 physicsData.Velocity[i] += physicsData.Gravity[i];
+                physicsData.Velocity[i] *= 0.9f;
                 physicsData.Position[i] += physicsData.Velocity[i] * dt * 60.0f;
                 physicsData.Angle[i] += physicsData.AngularVelocity[i] * dt * 60.0f;
 
-                //Debug.Log(frame + " " + i + " " + physicsData.Shape.ToString() + " physicsData.Position " + physicsData.Position[i].ToString() + " physicsData.Velocity[i] " + physicsData.Velocity[i].ToString() + " physicsData.Angle " + physicsData.Angle[i].ToString() + " physicsData.AngularVelocity " + physicsData.AngularVelocity[i]);
+                Debug.Log(frame + " " + i + " " + physicsData.Shape[i].ToString() + " physicsData.Position " + physicsData.Position[i].ToString() + " physicsData.Velocity[i] " + physicsData.Velocity[i].ToString() + " physicsData.Angle " + physicsData.Angle[i].ToString() + " physicsData.AngularVelocity " + physicsData.AngularVelocity[i]);
 
                 if (physicsData.Shape[i] == SHAPE.RECTANGLE)
                     SetRectVertices(physicsData, i);
@@ -474,7 +475,7 @@ namespace DODPhysics
 
             // let impulse = vsep_diff / (this.o1.inv_m + this.o2.inv_m + impAug1 + impAug2);
             // let impulseVec = this.normal.mult(impulse);
-            float impulse = (invMass1 > 0.0f && invMass2 > 0.0f) ? vsepDiff / (invMass1 + invMass2 + impAug1 + impAug2) : 0.0f;
+            float impulse = (invMass1 + invMass2 + impAug1 + impAug2) > 0.0f ? vsepDiff / (invMass1 + invMass2 + impAug1 + impAug2) : 0.0f;
             // if (impulse > 0.0f && impulse < 1.0f)
             //     impulse = 1.1f;
             // else if (impulse < 0.0f && impulse < -1.0f)
