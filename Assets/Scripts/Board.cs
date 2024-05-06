@@ -23,6 +23,7 @@ public class Board : MonoBehaviour
 
     public GameObject RectPrefab;
     public GameObject[] m_rectGO;
+    public SpriteRenderer[] m_rectSR;
     public Mesh[] m_rectMesh;
 
     float m_addTime = 0.01f;
@@ -41,6 +42,7 @@ public class Board : MonoBehaviour
         m_circlesGO = new GameObject[MaxObjects];
         m_rectGO = new GameObject[MaxObjects];
         m_rectMesh = new Mesh[MaxObjects];
+        m_rectSR = new SpriteRenderer[MaxObjects];
 
         m_circleTMPro = new TextMeshPro[MaxObjects];
 
@@ -127,7 +129,7 @@ public class Board : MonoBehaviour
     {
         // double time = Time.realtimeSinceStartupAsDouble;
         float dt = Time.deltaTime;
-        int numIterations = 1;
+        int numIterations = 10;
         if (!FrameByFrame)
             for (int i = 0; i < numIterations; i++)
                 PhysicsLogic.Tick(m_physicsData, dt / (float)numIterations);
@@ -200,6 +202,7 @@ public class Board : MonoBehaviour
 
         GameObject go = Instantiate(RectPrefab);
         m_rectGO[m_physicsData.ObjectCount] = go;
+        m_rectSR[m_physicsData.ObjectCount] = go.GetComponentInChildren<SpriteRenderer>();
         MeshFilter meshFilter = go.AddComponent<MeshFilter>();
         MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
@@ -235,10 +238,14 @@ public class Board : MonoBehaviour
             GameObject go = Instantiate(RectPrefab);
             m_rectGO[m_physicsData.ObjectCount] = go;
 
+            m_rectSR[m_physicsData.ObjectCount] = go.GetComponentInChildren<SpriteRenderer>();
+            m_rectSR[m_physicsData.ObjectCount].color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+            m_rectSR[m_physicsData.ObjectCount].transform.localScale = new Vector3(width, height, 1.0f);
+            m_rectSR[m_physicsData.ObjectCount].transform.localPosition = pos;
+
             MeshFilter meshFilter = go.AddComponent<MeshFilter>();
-            MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
-            meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
-            meshRenderer.sharedMaterial.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+            // MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
+            // meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
             Mesh mesh = new Mesh();
             mesh.vertices = new Vector3[4];
             int[] triangles = { 0, 3, 2, 0, 2, 1 };
@@ -268,6 +275,9 @@ public class Board : MonoBehaviour
                 for (int v = 0; v < m_physicsData.Vertices[i].Length; v++)
                     vertices[v] = m_physicsData.Vertices[i][v] / 100.0f;
                 m_rectMesh[i].SetVertices(vertices);
+
+                m_rectSR[i].transform.localPosition = physicsData.Position[i] / 100.0f;
+                m_rectSR[i].transform.localRotation = Quaternion.Euler(0.0f, 0.0f, physicsData.Angle[i] * Mathf.Rad2Deg);
             }
         }
 
