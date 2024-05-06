@@ -98,8 +98,12 @@ public class Board : MonoBehaviour
         m_physicsData.WallLeft = wallLeft * 100.0f;
         m_physicsData.WallRight = wallRight * 100.0f;
 
-
+        // static ball
         // addBall(new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), 1.0f, 0.0f, new Vector2(0.0f, 0.0f));
+
+        // static box
+        // addBox(Vector2.zero, 2.0f, 0.5f, Vector2.zero, 0.0f, Vector2.zero);
+        // m_physicsData.Angle[m_physicsData.ObjectCount-1] = 45.0f * Mathf.Deg2Rad;
 
         // addBall(new Vector2(0.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.5f, 1.0f, new Vector2(0.0f, -0.1f));
 

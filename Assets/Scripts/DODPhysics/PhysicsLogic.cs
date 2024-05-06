@@ -104,7 +104,6 @@ namespace DODPhysics
             physicsData.Vertices[physicsData.ObjectCount] = new Vector2[2];
 
             physicsData.Inertia[physicsData.ObjectCount] = mass * (radius * radius + radius * radius) / 12.0f;
-            physicsData.InvInertia[physicsData.ObjectCount] = physicsData.Inertia[physicsData.ObjectCount] > 0.0f ? 1.0f / physicsData.Inertia[physicsData.ObjectCount] : 0.0f;
 
             addCommon(physicsData, pos, velocity, mass, gravity);
 
@@ -126,7 +125,6 @@ namespace DODPhysics
             physicsData.RectHeight[physicsData.ObjectCount] = height;
 
             physicsData.Inertia[physicsData.ObjectCount] = mass * (width * width + height * height) / 12.0f;
-            physicsData.InvInertia[physicsData.ObjectCount] = 1.0f / physicsData.Inertia[physicsData.ObjectCount];
 
             addCommon(physicsData, pos, velocity, mass, gravity);
 
@@ -144,6 +142,8 @@ namespace DODPhysics
         private static void addCommon(PhysicsData physicsData, Vector2 pos, Vector2 velocity, float mass, Vector2 gravity)
         {
             physicsData.Gravity[physicsData.ObjectCount] = gravity;
+
+            physicsData.InvInertia[physicsData.ObjectCount] = physicsData.Inertia[physicsData.ObjectCount] > 0.0f ? 1.0f / physicsData.Inertia[physicsData.ObjectCount] : 0.0f;
 
             physicsData.Position[physicsData.ObjectCount] = pos;
             physicsData.Direction[physicsData.ObjectCount] = new Vector2(0.0f, 1.0f);
