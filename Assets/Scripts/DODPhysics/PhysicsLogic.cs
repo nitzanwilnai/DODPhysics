@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using UnityEngine;
 
 namespace DODPhysics
@@ -60,6 +61,8 @@ namespace DODPhysics
             physicsData.RectWidth = new float[maxObjects];
             physicsData.RectHeight = new float[maxObjects];
 
+            physicsData.CollisionHappenedPrevFrame = new bool[maxObjects];
+
         }
 
         public static void AddWall(PhysicsData physicsData, Vector2 p1, Vector2 p2, Vector2 gravity)
@@ -101,9 +104,11 @@ namespace DODPhysics
             physicsData.Vertices[physicsData.ObjectCount] = new Vector2[2];
 
             physicsData.Inertia[physicsData.ObjectCount] = mass * (radius * radius + radius * radius) / 12.0f;
-            physicsData.InvInertia[physicsData.ObjectCount] = 1.0f / physicsData.Inertia[physicsData.ObjectCount];
+            physicsData.InvInertia[physicsData.ObjectCount] = physicsData.Inertia[physicsData.ObjectCount] > 0.0f ? 1.0f / physicsData.Inertia[physicsData.ObjectCount] : 0.0f;
 
             addCommon(physicsData, pos, velocity, mass, gravity);
+
+            physicsData.Elasticity[physicsData.ObjectCount] = 0.8f;
 
             physicsData.ObjectCount++;
         }
@@ -155,23 +160,17 @@ namespace DODPhysics
         static int frame = 0;
         public static unsafe void Tick(PhysicsData physicsData, float dt)
         {
-            // bool* collisionHappened = stackalloc bool[physicsData.ObjectCount];
-            // for (int i = 0; i < physicsData.ObjectCount; i++)
-            //     collisionHappened[i] = false;
-
-
             for (int i = 0; i < physicsData.ObjectCount; i++)
             {
-                // physicsData.Velocity[i] *= 0.9f;
                 if (physicsData.Shape[i] == SHAPE.CIRCLE)
                 {
-                    Debug.Log(frame + " physicsData.Velocity[" + i + "] " + physicsData.Velocity[i] + " start");
-                    physicsData.Velocity[i] *= 1.0f - physicsData.Friction;
-                    Debug.Log(frame + " physicsData.Velocity[" + i + "] " + physicsData.Velocity[i] + " post friction");
-                    physicsData.Velocity[i] += physicsData.Gravity[i];
-                    Debug.Log(frame + " physicsData.Velocity[" + i + "] " + physicsData.Velocity[i] + " post gravity");
+                    physicsData.Velocity[i] *= 1.0f - physicsData.Friction * dt;
+
+                    if (!physicsData.CollisionHappenedPrevFrame[i])
+                        physicsData.Velocity[i] += physicsData.Gravity[i] * dt;
+
                     physicsData.Position[i] += physicsData.Velocity[i] * dt * 60.0f;
-                    Debug.Log(frame + " physicsData.Position[" + i + "] " + physicsData.Position[i]);
+
                     physicsData.Angle[i] += physicsData.AngularVelocity[i] * dt * 60.0f;
 
                     if (physicsData.Position[i].x < physicsData.WallLeft)
@@ -184,16 +183,14 @@ namespace DODPhysics
                         physicsData.Position[i].y = physicsData.Ceiling - 1.0f;
                 }
 
-                // Debug.Log(frame + " " + i + " " + physicsData.Shape[i].ToString() + " physicsData.Position " + physicsData.Position[i].ToString() + " physicsData.Velocity[i] " + physicsData.Velocity[i].ToString() + " physicsData.Angle " + physicsData.Angle[i].ToString() + " physicsData.AngularVelocity " + physicsData.AngularVelocity[i]);
-                // if (physicsData.Velocity[i].magnitude > maxVel)
-                //     maxVel = physicsData.Velocity[i].magnitude;
-                // if (physicsData.AngularVelocity[i] > maxAngVel)
-                //     maxAngVel = physicsData.AngularVelocity[i];
-
                 if (physicsData.Shape[i] == SHAPE.RECTANGLE)
                     SetRectVertices(physicsData, i);
             }
             frame++;
+
+            for (int i = 0; i < physicsData.ObjectCount; i++)
+                physicsData.CollisionHappenedPrevFrame[i] = false;
+
 
             // Debug.Log("maxVel " + maxVel + " maxAngVel " + maxAngVel);
 
@@ -220,37 +217,14 @@ namespace DODPhysics
                 int idx1 = collisionData[i].Idx1;
                 int idx2 = collisionData[i].Idx2;
 
+                physicsData.CollisionHappenedPrevFrame[idx1] = true;
+                physicsData.CollisionHappenedPrevFrame[idx2] = true;
+
                 // penetration resolution
                 PenetrationResolution(physicsData, collisionData[i]);
                 // todo collision response
                 CollisionResponse(physicsData, collisionData[i]);
             }
-
-            // for (int i = 0; i < physicsData.ObjectCount; i++)
-            // {
-            //     if (!physicsData.Fixed[i])
-            //     {
-            //         physicsData.Position[i] += physicsData.Velocity[i] * dt;
-            //         physicsData.Angle[i] += physicsData.AngularVelocity[i] * dt * Mathf.Rad2Deg;
-            //     }
-
-            //     SetRectVertices(physicsData, i);
-            // }
-
-            // Vector2 gravity = new Vector2(0.0f, physicsData.GravityY);
-
-            // // apply gravity
-            // for (int i = 0; i < physicsData.ObjectCount; i++)
-            //     if (collisionHappened[i])
-            //     {
-            //         physicsData.Velocity[i] *= 0.9f;
-            //         physicsData.AngularVelocity[i] *= 0.9f;
-            //     }
-            //     else if (physicsData.Gravity[i])
-            //     {
-            //         // modify physicsData.CircleDireciton.Y by adding gravity and normalizing again
-            //         physicsData.Velocity[i] += gravity * dt;
-            //     }
         }
 
         public static void SetRectVertices(PhysicsData physicsData, int idx)
@@ -443,9 +417,9 @@ namespace DODPhysics
 
             int idx1 = rectCollisionData.Idx1;
             int idx2 = rectCollisionData.Idx2;
-            if (physicsData.InvMass[idx1] > 0.0f || physicsData.InvMass[idx2] > 0.0f)
+            if (rectCollisionData.Penetration > 0.01f && physicsData.InvMass[idx1] > 0.0f || physicsData.InvMass[idx2] > 0.0f)
             {
-                Vector2 penResolution = rectCollisionData.Perpendicular * (rectCollisionData.Penetration / (physicsData.InvMass[idx1] + physicsData.InvMass[idx2]));
+                Vector2 penResolution = rectCollisionData.Perpendicular * (rectCollisionData.Penetration / (physicsData.InvMass[idx1] + physicsData.InvMass[idx2])) * 1.1f;
                 physicsData.Position[idx1] += penResolution * physicsData.InvMass[idx1];
                 physicsData.Position[idx2] += penResolution * -physicsData.InvMass[idx2];
             }
@@ -509,108 +483,21 @@ namespace DODPhysics
             // let impulse = vsep_diff / (this.o1.inv_m + this.o2.inv_m + impAug1 + impAug2);
             // let impulseVec = this.normal.mult(impulse);
             float impulse = (invMass1 + invMass2 + impAug1 + impAug2) > 0.0f ? vsepDiff / (invMass1 + invMass2 + impAug1 + impAug2) : 0.0f;
-            // if (impulse > 0.0f && impulse < 1.0f)
-            //     impulse = 1.1f;
-            // else if (impulse < 0.0f && impulse < -1.0f)
-            //     impulse = -1.1f;
-            // Debug.Log("impulse " + impulse);
             Vector2 impulseVec = rectCollisionData.Perpendicular * impulse;
 
             // //3. Changing the velocities
             // this.o1.vel = this.o1.vel.add(impulseVec.mult(this.o1.inv_m));
             // this.o2.vel = this.o2.vel.add(impulseVec.mult(-this.o2.inv_m));
-            // if (physicsData.Fixed[idx1])
-            //     invMass2 = physicsData.InvMass[idx1] + physicsData.InvMass[idx2];
-            // if (physicsData.Fixed[idx2])
-            //     invMass1 = physicsData.InvMass[idx1] + physicsData.InvMass[idx2];
-
             physicsData.Velocity[idx1] += impulseVec * invMass1;
             physicsData.Velocity[idx2] -= impulseVec * invMass2;
 
             // this.o1.angVel += this.o1.inv_inertia * Vector.cross(collArm1, impulseVec);
-            // this.o2.angVel -= this.o2.inv_inertia * Vector.cross(collArm2, impulseVec); 
+            // this.o2.angVel -= this.o2.inv_inertia * Vector.cross(collArm2, impulseVec);
             physicsData.AngularVelocity[idx1] += physicsData.InvInertia[idx1] * VectorCross2D(collArm1, impulseVec);
             physicsData.AngularVelocity[idx2] -= physicsData.InvInertia[idx2] * VectorCross2D(collArm2, impulseVec);
 
             // Debug.Log("physicsData.AngularVelocity[" + idx1 + "] " + physicsData.AngularVelocity[idx1]); 
             // Debug.Log("physicsData.AngularVelocity[" + idx2 + "] " + physicsData.AngularVelocity[idx2]);
-        }
-
-
-
-
-
-
-
-
-        // private static unsafe bool checkRectRectCollision(PhysicsData physicsData, int i1, int i2)
-        // {
-        //     Vector2 r1p1 = new Vector2(rect1.x, rect1.y);
-        //     Vector2 r1p2 = new Vector2(rect1.x, rect1.w);
-        //     Vector2 r1p3 = new Vector2(rect1.z, rect1.w);
-        //     Vector2 r1p4 = new Vector2(rect1.z, rect1.y);
-
-        //     Vector2 collisionP;
-        //     if (checkLineRectCollision(r1p1, r1p2, rect2, out collisionP))
-        //     {
-        //         return true;
-        //     }
-        //     else if (checkLineRectCollision(r1p2, r1p3, rect2, out collisionP))
-        //     {
-        //         return true;
-        //     }
-        //     else if (checkLineRectCollision(r1p3, r1p4, rect2, out collisionP))
-        //     {
-        //         return true;
-        //     }
-        //     else if (checkLineRectCollision(r1p4, r1p1, rect2, out collisionP))
-        //     {
-        //         return true;
-        //     }
-        //     return false;
-        // }
-
-        private static unsafe bool checkLineRectCollision(Vector2 p1, Vector2 p2, Vector4 rect, out Vector2 collisionP)
-        {
-            Vector2 rectP1 = new Vector2(rect.x, rect.y);
-            Vector2 rectP2 = new Vector2(rect.x, rect.w);
-            Vector2 rectP3 = new Vector2(rect.z, rect.w);
-            Vector2 rectP4 = new Vector2(rect.z, rect.y);
-
-            collisionP = Vector2.zero;
-            if (checkLineLineCollision(p1, p2, rectP1, rectP2, out collisionP))
-            {
-                return true;
-            }
-            else if (checkLineLineCollision(p1, p2, rectP2, rectP3, out collisionP))
-            {
-                return true;
-            }
-            else if (checkLineLineCollision(p1, p2, rectP3, rectP4, out collisionP))
-            {
-                return true;
-            }
-            else if (checkLineLineCollision(p1, p2, rectP4, rectP1, out collisionP))
-            {
-                return true;
-            }
-            return false;
-        }
-
-        private static unsafe bool checkLineLineCollision(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, out Vector2 collisionP)
-        {
-            float uA = ((p4.x - p4.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
-
-            float uB = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
-
-            collisionP = Vector2.zero;
-            if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1)
-            {
-                collisionP.x = p1.x + (uA * (p2.x - p1.x));
-                collisionP.y = p1.y + (uA * (p2.y - p1.y));
-                return true;
-            }
-            return false;
         }
     }
 }

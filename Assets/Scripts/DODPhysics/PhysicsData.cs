@@ -42,5 +42,7 @@ namespace DODPhysics
         public float[] Inertia;
         public float[] InvInertia;
         public float[] Elasticity;
+
+        public bool[] CollisionHappenedPrevFrame;
     }
 }

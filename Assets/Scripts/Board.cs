@@ -1,5 +1,6 @@
 using UnityEngine;
 using DODPhysics;
+using TMPro;
 
 public class Board : MonoBehaviour
 {
@@ -18,6 +19,7 @@ public class Board : MonoBehaviour
 
     public GameObject CirclePrefab;
     GameObject[] m_circlesGO;
+    TextMeshPro[] m_circleTMPro;
 
     public GameObject RectPrefab;
     public GameObject[] m_rectGO;
@@ -26,7 +28,7 @@ public class Board : MonoBehaviour
     float m_addTime = 0.01f;
     float m_addTimer = 0.0f;
 
-
+    public bool FrameByFrame = false;
 
     // Start is called before the first frame update
     void Start()
@@ -39,6 +41,8 @@ public class Board : MonoBehaviour
         m_circlesGO = new GameObject[MaxObjects];
         m_rectGO = new GameObject[MaxObjects];
         m_rectMesh = new Mesh[MaxObjects];
+
+        m_circleTMPro = new TextMeshPro[MaxObjects];
 
         PhysicsLogic.AllocatePhysics(m_physicsData, MaxObjects, Friction);
 
@@ -95,6 +99,8 @@ public class Board : MonoBehaviour
         m_physicsData.WallRight = wallRight * 100.0f;
 
 
+        addBall(new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), 1.0f, 0.0f, new Vector2(0.0f, 0.0f));
+
         // addBall(new Vector2(0.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.5f, 1.0f, new Vector2(0.0f, -0.1f));
 
         // addBox(new Vector2(1.0f, floor + 0.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
@@ -116,7 +122,11 @@ public class Board : MonoBehaviour
     void Update()
     {
         // double time = Time.realtimeSinceStartupAsDouble;
-        PhysicsLogic.Tick(m_physicsData, Time.deltaTime);
+        float dt = Time.deltaTime;
+        int numIterations = 1;
+        if (!FrameByFrame)
+            for (int i = 0; i < numIterations; i++)
+                PhysicsLogic.Tick(m_physicsData, dt / (float)numIterations);
         // Debug.Log(m_physicsData.CircleCount + " time " + (Time.realtimeSinceStartupAsDouble - time).ToString("G5"));
 
         // m_addTimer += Time.deltaTime;
@@ -126,25 +136,30 @@ public class Board : MonoBehaviour
         //     addCircle();
         // }
 
-        if (Input.GetMouseButtonUp(0))
+        if (Input.GetKeyUp(KeyCode.A))
         {
             // if (Random.value < 0.5f)
             //     addBox(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), 0.5f, 0.5f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
             // else
-            addBall(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.5f, 1.0f, Gravity);
+            addBall(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.25f, 1.0f, Gravity);
         }
 
-        if (Input.GetKeyUp(KeyCode.Space))
+        if (Input.GetKeyUp(KeyCode.S))
         {
             for (int i = 0; i < m_physicsData.ObjectCount; i++)
                 m_physicsData.Gravity[i] = Vector2.zero;
         }
+        if (Input.GetKeyUp(KeyCode.D))
+        {
+            for (int i = 0; i < m_physicsData.ObjectCount; i++)
+                m_physicsData.Gravity[i] = Gravity;
+        }
 
 
-        // if (Input.GetKeyUp(KeyCode.Space))
-        // {
-        //     PhysicsLogic.Tick(m_physicsData, 1.0f / 60.0f);
-        // }
+        if (FrameByFrame && Input.GetKeyUp(KeyCode.Space))
+        {
+            PhysicsLogic.Tick(m_physicsData, 1.0f / 60.0f);
+        }
 
         // SATOutputData satOutputData;
         // if (PhysicsLogic.SeparatingAxisTheorem(m_physicsData, 0, 1, out satOutputData))
@@ -189,6 +204,9 @@ public class Board : MonoBehaviour
         int[] triangles = { 0, 3, 2, 0, 2, 1 };
         mesh.triangles = triangles;
         meshFilter.mesh = mesh;
+
+        go.GetComponentInChildren<TextMeshPro>().gameObject.SetActive(false);
+
         m_rectMesh[m_physicsData.ObjectCount] = mesh;
     }
 
@@ -200,6 +218,9 @@ public class Board : MonoBehaviour
             m_circlesGO[m_physicsData.ObjectCount].GetComponent<SpriteRenderer>().color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
             m_circlesGO[m_physicsData.ObjectCount].transform.localPosition = pos;
             m_circlesGO[m_physicsData.ObjectCount].transform.localScale = new Vector3(radius * 2.0f, radius * 2.0f, 1.0f);
+
+            m_circleTMPro[m_physicsData.ObjectCount] = m_circlesGO[m_physicsData.ObjectCount].GetComponentInChildren<TextMeshPro>();
+            m_circleTMPro[m_physicsData.ObjectCount].text = m_physicsData.ObjectCount.ToString();
 
             PhysicsLogic.AddBall(m_physicsData, pos, velocity, radius, mass, gravity);
         }
@@ -224,6 +245,8 @@ public class Board : MonoBehaviour
             meshFilter.mesh = mesh;
             m_rectMesh[m_physicsData.ObjectCount] = mesh;
 
+            go.GetComponentInChildren<TextMeshPro>().text = m_physicsData.ObjectCount.ToString();
+
             PhysicsLogic.AddRect(m_physicsData, pos, velocity, width, height, mass, gravity);
         }
     }
@@ -233,7 +256,10 @@ public class Board : MonoBehaviour
         for (int i = 0; i < physicsData.ObjectCount; i++)
         {
             if (physicsData.Shape[i] == SHAPE.CIRCLE)
+            {
                 m_circlesGO[i].transform.localPosition = physicsData.Position[i] / 100.0f;
+                // m_circleTMPro[i].text = i + "\n" + "V " + (m_physicsData.Velocity[i].y * 10.0f).ToString("G0");
+            }
             else if (m_physicsData.Shape[i] == SHAPE.RECTANGLE)
             {
                 Vector3[] vertices = m_rectMesh[i].vertices;
