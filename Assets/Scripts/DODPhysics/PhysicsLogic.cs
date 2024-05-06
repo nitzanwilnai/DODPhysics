@@ -162,7 +162,7 @@ namespace DODPhysics
         {
             for (int i = 0; i < physicsData.ObjectCount; i++)
             {
-                if (physicsData.Shape[i] == SHAPE.CIRCLE)
+                if (physicsData.Mass[i] > 0.0f)
                 {
                     physicsData.Velocity[i] *= 1.0f - physicsData.Friction * dt;
 
@@ -204,7 +204,7 @@ namespace DODPhysics
                     if (physicsData.Shape[i1] != SHAPE.WALL || physicsData.Shape[i2] != SHAPE.WALL)
                     {
                         SATOutputData satOutputData;
-                        if (SeparatingAxisTheorem(physicsData, i1, i2, out satOutputData) && rectCollisionDataCount < physicsData.ObjectCount)
+                        if (SeparatingAxisTheorem(physicsData, i1, i2, out satOutputData) && rectCollisionDataCount < collisionDataSize)
                             collisionData[rectCollisionDataCount++] = new CollisionData(i1, i2, satOutputData.Axis, satOutputData.Penetration, satOutputData.CollisionVertex);
                         if (rectCollisionDataCount >= collisionDataSize)
                             Debug.LogError("rectCollisionDataCount" + rectCollisionDataCount + " physicsData.ObjectCount " + physicsData.ObjectCount);

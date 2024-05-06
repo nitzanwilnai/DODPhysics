@@ -99,7 +99,7 @@ public class Board : MonoBehaviour
         m_physicsData.WallRight = wallRight * 100.0f;
 
 
-        addBall(new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), 1.0f, 0.0f, new Vector2(0.0f, 0.0f));
+        // addBall(new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), 1.0f, 0.0f, new Vector2(0.0f, 0.0f));
 
         // addBall(new Vector2(0.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.5f, 1.0f, new Vector2(0.0f, -0.1f));
 
@@ -138,10 +138,10 @@ public class Board : MonoBehaviour
 
         if (Input.GetKeyUp(KeyCode.A))
         {
-            // if (Random.value < 0.5f)
-            //     addBox(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), 0.5f, 0.5f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-            // else
-            addBall(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.25f, 1.0f, Gravity);
+            if (Random.value < 0.5f)
+                addBox(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), 0.5f, 0.5f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+            else
+                addBall(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.25f, 1.0f, Gravity);
         }
 
         if (Input.GetKeyUp(KeyCode.S))
@@ -205,8 +205,6 @@ public class Board : MonoBehaviour
         mesh.triangles = triangles;
         meshFilter.mesh = mesh;
 
-        go.GetComponentInChildren<TextMeshPro>().gameObject.SetActive(false);
-
         m_rectMesh[m_physicsData.ObjectCount] = mesh;
     }
 
@@ -245,7 +243,7 @@ public class Board : MonoBehaviour
             meshFilter.mesh = mesh;
             m_rectMesh[m_physicsData.ObjectCount] = mesh;
 
-            go.GetComponentInChildren<TextMeshPro>().text = m_physicsData.ObjectCount.ToString();
+            // go.GetComponentInChildren<TextMeshPro>().text = m_physicsData.ObjectCount.ToString();
 
             PhysicsLogic.AddRect(m_physicsData, pos, velocity, width, height, mass, gravity);
         }
