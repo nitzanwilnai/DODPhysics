@@ -192,12 +192,12 @@ public class Board : MonoBehaviour
         if (Input.GetKeyUp(KeyCode.S))
         {
             for (int i = 0; i < m_physicsData.ObjectCount; i++)
-                m_physicsData.Gravity[i] = Vector2.zero;
+                m_physicsData.Gravity[i] = Vec2.Zero();
         }
         if (Input.GetKeyUp(KeyCode.D))
         {
             for (int i = 0; i < m_physicsData.ObjectCount; i++)
-                m_physicsData.Gravity[i] = Gravity;
+                m_physicsData.Gravity[i] = new Vec2(Gravity);
         }
 
 
@@ -211,7 +211,7 @@ public class Board : MonoBehaviour
 
     private void addWall(Vector2 p1, Vector2 p2)
     {
-        PhysicsLogic.AddWall(m_physicsData, p1, p2, Vector2.zero);
+        PhysicsLogic.AddWall(m_physicsData, new Vec2(p1), new Vec2(p2), Vec2.Zero());
 
         GameObject go = Instantiate(RectPrefab);
         m_rectGO[m_physicsData.ObjectCount] = go;
@@ -249,7 +249,7 @@ public class Board : MonoBehaviour
             else
                 m_circlesGO[m_physicsData.ObjectCount].GetComponentInChildren<TextMeshPro>().gameObject.SetActive(false);
 
-            PhysicsLogic.AddCircle(m_physicsData, pos, velocity, radius, mass, gravity);
+            PhysicsLogic.AddCircle(m_physicsData, new Vec2(pos), new Vec2(velocity), radius, mass, new Vec2(gravity));
         }
     }
 
@@ -284,7 +284,7 @@ public class Board : MonoBehaviour
             else
                 go.GetComponentInChildren<TextMeshPro>().gameObject.SetActive(false);
 
-            PhysicsLogic.AddRect(m_physicsData, pos, velocity, width, height, mass, gravity);
+            PhysicsLogic.AddRect(m_physicsData, new Vec2(pos), new Vec2(velocity), width, height, mass, new Vec2(gravity));
         }
     }
 
@@ -294,7 +294,7 @@ public class Board : MonoBehaviour
         {
             if (physicsData.Shape[i] == SHAPE.CIRCLE)
             {
-                m_circlesGO[i].transform.localPosition = physicsData.Position[i] / 100.0f;
+                m_circlesGO[i].transform.localPosition = Vec2.ToVector3(physicsData.Position[i] / 100.0f);
             }
             else if (m_physicsData.Shape[i] == SHAPE.RECTANGLE)
             {
@@ -302,11 +302,11 @@ public class Board : MonoBehaviour
                 {
                     Vector3[] vertices = m_rectMesh[i].vertices;
                     for (int v = 0; v < m_physicsData.Vertices[i].Length; v++)
-                        vertices[v] = m_physicsData.Vertices[i][v] / 100.0f;
+                        vertices[v] = Vec2.ToVector3(m_physicsData.Vertices[i][v] / 100.0f);
                     m_rectMesh[i].SetVertices(vertices);
                 }
 
-                m_rectSR[i].transform.localPosition = physicsData.Position[i] / 100.0f;
+                m_rectSR[i].transform.localPosition = Vec2.ToVector3(physicsData.Position[i] / 100.0f);
                 m_rectSR[i].transform.localRotation = Quaternion.Euler(0.0f, 0.0f, physicsData.Angle[i] * Mathf.Rad2Deg);
             }
         }

@@ -26,15 +26,15 @@ namespace DODPhysics
         public int MaxObjects;
         public int ObjectCount;
         public SHAPE[] Shape;
-        public Vector2[][] Vertices;
+        public Vec2[][] Vertices;
         public int[] NumAxis;
 
-        public Vector2[] Gravity;
+        public Vec2[] Gravity;
         public int[] UnFixedIdxs;
 
-        public Vector2[] Position;
-        public Vector2[] Direction;
-        public Vector2[] Velocity;
+        public Vec2[] Position;
+        public Vec2[] Direction;
+        public Vec2[] Velocity;
         public float[] Angle;
         public float[] AngularVelocity;
         public float[] Mass;

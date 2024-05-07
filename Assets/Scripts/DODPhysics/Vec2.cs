@@ -35,6 +35,9 @@ namespace DODPhysics
         public static Vec2 operator *(Vec2 a, float b)
         => new Vec2(a.x * b, a.y * b);
 
+        public static Vec2 operator /(Vec2 a, float b)
+        => new Vec2(a.x / b, a.y / b);
+
         public static Vector3 ToVector3(Vec2 a)
         {
             return new Vector3(a.x, a.y, 0.0f);
@@ -67,6 +70,11 @@ namespace DODPhysics
         public float Magnitude()
         {
             return Mathf.Sqrt(x * x + y * y);
+        }
+
+        public float MagnitudeSqr()
+        {
+            return x * x + y * y;
         }
 
         public void Normalize()
@@ -134,6 +142,20 @@ namespace DODPhysics
             double sa = Math.Sin(radians);
             x = (float)(ca * x - sa * y);
             y = (float)(sa * x + ca * y);
+        }
+
+        public void RotateRad(double radians)
+        {
+            double ca = Math.Cos(radians);
+            double sa = Math.Sin(radians);
+            x = (float)(ca * x - sa * y);
+            y = (float)(sa * x + ca * y);
+        }
+
+        public static Vec2 RotateRad(Vec2 a, double radians)
+        {
+            a.RotateRad(radians);
+            return a;
         }
     }
 }
