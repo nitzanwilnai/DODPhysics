@@ -14,7 +14,7 @@ namespace DODPhysics
         public float Ceiling;
 
         // circles
-        public float[] CircleRadius;
+        public float[] Radius;
 
         // rect
         public float[] RectWidth;

@@ -56,7 +56,7 @@ namespace DODPhysics
             physicsData.InvInertia = new float[maxObjects];
             physicsData.Elasticity = new float[maxObjects];
 
-            physicsData.CircleRadius = new float[maxObjects];
+            physicsData.Radius = new float[maxObjects];
 
             physicsData.RectWidth = new float[maxObjects];
             physicsData.RectHeight = new float[maxObjects];
@@ -91,7 +91,7 @@ namespace DODPhysics
             physicsData.ObjectCount++;
         }
 
-        public static void AddBall(PhysicsData physicsData, Vector2 pos, Vector2 velocity, float radius, float mass, Vector2 gravity)
+        public static void AddCircle(PhysicsData physicsData, Vector2 pos, Vector2 velocity, float radius, float mass, Vector2 gravity)
         {
             pos *= 100.0f;
             velocity *= 100.0f;
@@ -100,7 +100,7 @@ namespace DODPhysics
             physicsData.Shape[physicsData.ObjectCount] = SHAPE.CIRCLE;
             physicsData.NumAxis[physicsData.ObjectCount] = 1;
 
-            physicsData.CircleRadius[physicsData.ObjectCount] = radius;
+            physicsData.Radius[physicsData.ObjectCount] = radius;
             physicsData.Vertices[physicsData.ObjectCount] = new Vector2[2];
 
             physicsData.Inertia[physicsData.ObjectCount] = mass * (radius * radius + radius * radius) / 12.0f;
@@ -123,6 +123,8 @@ namespace DODPhysics
 
             physicsData.RectWidth[physicsData.ObjectCount] = width;
             physicsData.RectHeight[physicsData.ObjectCount] = height;
+
+            physicsData.Radius[physicsData.ObjectCount] = Mathf.Sqrt(width * width + height * height);
 
             physicsData.Inertia[physicsData.ObjectCount] = mass * (width * width + height * height) / 12.0f;
 
@@ -201,13 +203,24 @@ namespace DODPhysics
             {
                 for (int i2 = i1 + 1; i2 < physicsData.ObjectCount; i2++)
                 {
-                    if (physicsData.Shape[i1] != SHAPE.WALL || physicsData.Shape[i2] != SHAPE.WALL)
+                    if (physicsData.Mass[i1] > 0 || physicsData.Mass[i2] > 0)
                     {
-                        SATOutputData satOutputData;
-                        if (SeparatingAxisTheorem(physicsData, i1, i2, out satOutputData) && rectCollisionDataCount < collisionDataSize)
-                            collisionData[rectCollisionDataCount++] = new CollisionData(i1, i2, satOutputData.Axis, satOutputData.Penetration, satOutputData.CollisionVertex);
-                        if (rectCollisionDataCount >= collisionDataSize)
-                            Debug.LogError("rectCollisionDataCount" + rectCollisionDataCount + " >= collisionDataSize " + collisionDataSize);
+                        bool checkCollision = (physicsData.Shape[i1] == SHAPE.WALL || physicsData.Shape[i2] == SHAPE.WALL);
+                        if (!checkCollision)
+                        {
+                            float radius = physicsData.Radius[i1] + physicsData.Radius[i2];
+                            float radiusSquared = radius * radius;
+                            float dstSquared = (physicsData.Position[i2] - physicsData.Position[i1]).sqrMagnitude;
+                            checkCollision = dstSquared < radiusSquared;
+                        }
+                        if (checkCollision)
+                        {
+                            SATOutputData satOutputData;
+                            if (SeparatingAxisTheorem(physicsData, i1, i2, out satOutputData) && rectCollisionDataCount < collisionDataSize)
+                                collisionData[rectCollisionDataCount++] = new CollisionData(i1, i2, satOutputData.Axis, satOutputData.Penetration, satOutputData.CollisionVertex);
+                            if (rectCollisionDataCount >= collisionDataSize)
+                                Debug.LogError("rectCollisionDataCount" + rectCollisionDataCount + " >= collisionDataSize " + collisionDataSize);
+                        }
                     }
                 }
             }
@@ -405,8 +418,8 @@ namespace DODPhysics
 
         private static void setBallVerticesAlongAxis(PhysicsData physicsData, int idx, Vector2 axis)
         {
-            physicsData.Vertices[idx][0] = physicsData.Position[idx] + (axis.normalized * -physicsData.CircleRadius[idx]);
-            physicsData.Vertices[idx][1] = physicsData.Position[idx] + (axis.normalized * physicsData.CircleRadius[idx]);
+            physicsData.Vertices[idx][0] = physicsData.Position[idx] + (axis.normalized * -physicsData.Radius[idx]);
+            physicsData.Vertices[idx][1] = physicsData.Position[idx] + (axis.normalized * physicsData.Radius[idx]);
         }
 
         public static void PenetrationResolution(PhysicsData physicsData, CollisionData rectCollisionData)

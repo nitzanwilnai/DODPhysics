@@ -249,7 +249,7 @@ public class Board : MonoBehaviour
             else
                 m_circlesGO[m_physicsData.ObjectCount].GetComponentInChildren<TextMeshPro>().gameObject.SetActive(false);
 
-            PhysicsLogic.AddBall(m_physicsData, pos, velocity, radius, mass, gravity);
+            PhysicsLogic.AddCircle(m_physicsData, pos, velocity, radius, mass, gravity);
         }
     }
 
