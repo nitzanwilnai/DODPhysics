@@ -207,7 +207,7 @@ namespace DODPhysics
                         if (SeparatingAxisTheorem(physicsData, i1, i2, out satOutputData) && rectCollisionDataCount < collisionDataSize)
                             collisionData[rectCollisionDataCount++] = new CollisionData(i1, i2, satOutputData.Axis, satOutputData.Penetration, satOutputData.CollisionVertex);
                         if (rectCollisionDataCount >= collisionDataSize)
-                            Debug.LogError("rectCollisionDataCount" + rectCollisionDataCount + " physicsData.ObjectCount " + physicsData.ObjectCount);
+                            Debug.LogError("rectCollisionDataCount" + rectCollisionDataCount + " >= collisionDataSize " + collisionDataSize);
                     }
                 }
             }
