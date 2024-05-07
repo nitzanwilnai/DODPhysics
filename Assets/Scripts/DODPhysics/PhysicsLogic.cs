@@ -396,7 +396,7 @@ namespace DODPhysics
             float minDist = float.MaxValue;
             for (int i = 0; i < physicsData.Vertices[idx].Length; i++)
             {
-                float mag = (p - physicsData.Vertices[idx][i]).Magnitude();
+                float mag = (p - physicsData.Vertices[idx][i]).MagnitudeSqr();
                 if (mag < minDist)
                 {
                     closestVertex = physicsData.Vertices[idx][i];
