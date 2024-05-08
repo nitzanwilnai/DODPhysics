@@ -252,14 +252,6 @@ namespace DODPhysics
             float halfWidth = physicsData.RectWidth[idx] / 2.0f;
             float halfHeight = physicsData.RectHeight[idx] / 2.0f;
 
-            // Quaternion quaternion = Quaternion.Euler(0.0f, 0.0f, physicsData.Angle[idx] * Mathf.Rad2Deg);
-            // physicsData.Direction[idx] = quaternion * new Vector2(0.0f, 1.0f);
-
-            // physicsData.Vertices[idx][0] = pos + (Vector2)(quaternion * new Vector3(-halfWidth, -halfHeight));
-            // physicsData.Vertices[idx][1] = pos + (Vector2)(quaternion * new Vector3(halfWidth, -halfHeight));
-            // physicsData.Vertices[idx][2] = pos + (Vector2)(quaternion * new Vector3(halfWidth, halfHeight));
-            // physicsData.Vertices[idx][3] = pos + (Vector2)(quaternion * new Vector3(-halfWidth, halfHeight));
-
             Vec2 dir = new Vec2(0.0f, 1.0f);
             dir.RotateRad( physicsData.Angle[idx]);
 
@@ -336,20 +328,10 @@ namespace DODPhysics
             float max;
             getMinMaxForAxis(physicsData, vertexRectIdx, smallestAxis, out min, out max, out collisionVertex);
 
-            // Debug.Log(physicsData.Shape[idx1].ToString() + " pos " + idx1 + " " + physicsData.Position[idx1].ToString() + " " + physicsData.Shape[idx2].ToString() + " pos " + idx2 + " " + physicsData.Position[idx2].ToSafeString() + " collisionVertex " + collisionVertex.ToString());
-            // Debug.Log(physicsData.Shape[idx1].ToString() + " velocity " + physicsData.Velocity[idx1].ToString());
-            // Debug.Log(physicsData.Shape[idx2].ToString() + " velocity " + physicsData.Velocity[idx2].ToString());
-            // Debug.Log(physicsData.Shape[idx1].ToString() + " direction " + physicsData.Direction[idx1].ToString());
-            // Debug.Log(physicsData.Shape[idx2].ToString() + " direction " + physicsData.Direction[idx2].ToString());
-            // Debug.Log(physicsData.Shape[idx1].ToString() + " angle " + physicsData.Angle[idx1].ToString());
-            // Debug.Log(physicsData.Shape[idx2].ToString() + " angle " + physicsData.Angle[idx2].ToString());
-
             if (vertexRectIdx == idx2)
             {
                 smallestAxis = smallestAxis * -1.0f;
             }
-
-            //Debug.Log("penetration " + satOutputData.Penetration + " axis " + satOutputData.Axis.ToString() + " collisionVertex " + satOutputData.CollisionVertex.ToString());
 
             satOutputData.Penetration = minOverlap;
             satOutputData.Axis = smallestAxis;

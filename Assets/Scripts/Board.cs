@@ -29,10 +29,6 @@ public class Board : MonoBehaviour
     public Mesh[] m_rectMesh;
     TextMeshPro[] m_objectTMPro;
 
-
-    float m_addTime = 0.01f;
-    float m_addTimer = 0.0f;
-
     public bool FrameByFrame = false;
 
     void Awake()
@@ -62,58 +58,30 @@ public class Board : MonoBehaviour
 
         PhysicsLogic.AllocatePhysics(m_physicsData, MaxObjects, Friction);
 
-        // PhysicsLogic.AddLine(m_physicsData, new Vector2(wallLeft, floor), new Vector2(wallRight, floor));
-
-        // addCircle(new Vector2(-1.5f, -2.0f), new Vector2(0.0f, 0.0f), 0.5f, 999.0f);
-        // addCircle(new Vector2(-1.6f, 2.0f),  new Vector2(0.0f, -1.0f), 0.25f, 1.0f);
-
-        // addCircle(new Vector2(0.1f, 2.0f), new Vector2(0.0f, 0.0f), 0.5f, 1.0f);
-        // addCircle(new Vector2(0.0f, 2.1f),  new Vector2(0.0f, 0.0f), 0.5f, 1.0f);
-
         int seed = 838587520;
         Debug.Log("seed " + seed);
         Random.InitState(seed);
-        // for (int i = 0; i < 30; i++)
-        //     addCircle();
 
-        // RECTANGLE pos 0 (2.009793,2.1) CIRCLE pos 2 (-7.606146,2.567009) collisionVertex (1.810378,1.998839)
-
-        // TEST1
-        // let Box1 = new Box(200, 200, 240, 200, 20, 1);
-        // let Box2 = new Box(100, 200, 120, 200, 40, 1);
-        // addRect(new Vector2(2.1f, 2.1f), 0.4f, 0.2f, new Vector2(-1.0f, 0.0f));
-        // addRect(new Vector2(0.9f, 2.2f), 0.2f, 0.4f, Vector2.zero);
-        // addCircle(new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), 0.25f, 1.0f);
-        // addRect(new Vector2(2.2f, 0.0f), 0.4f, 0.2f, new Vector2(-1.0f, 0.0f));
-
-        // TEST2 - was causing collision
-        // addCircle(new Vector2(-8.51f, 3.75f), new Vector2(0.0f, 0.0f), 0.25f, 1.0f);
-        // addRect(new Vector2(2.55f, 2.03f), 0.4f, 0.2f, new Vector2(-1.0f, 0.0f));
-        // m_physicsData.Velocity[0] = new Vector2(0.34f, 1.32f);
-        // m_physicsData.Velocity[1] = new Vector2(-0.99f, 0.12f);
-        // m_physicsData.Angle[0] = 142.3341f;
-        // m_physicsData.Angle[1] = 55.20527f;
-
-        // addBox(FloorGO.transform.localPosition, FloorGO.transform.localScale.x, FloorGO.transform.localScale.y, Vector2.zero, 1.0f, false);
-        // addBox(CeilingGO.transform.localPosition, CeilingGO.transform.localScale.x, CeilingGO.transform.localScale.y, Vector2.zero, 1000.0f, false);
-        // addBox(WallLeftGO.transform.localPosition, WallLeftGO.transform.localScale.x, WallLeftGO.transform.localScale.y, Vector2.zero, 1000.0f, false);
-        // addBox(WallRightGO.transform.localPosition, WallRightGO.transform.localScale.x, WallRightGO.transform.localScale.y, Vector2.zero, 1000.0f, false);
-
-        // floor = 0.0f;
-        // addWall(new Vector2(0.0f, floor), new Vector2(400.0f, floor)); // floor
         addWall(new Vector2(wallLeft, floor), new Vector2(wallRight, floor)); // floor
         addWall(new Vector2(wallLeft, ceiling), new Vector2(wallRight, ceiling)); // ceiling
         addWall(new Vector2(wallLeft, floor), new Vector2(wallLeft, ceiling)); // wall left
         addWall(new Vector2(wallRight, floor), new Vector2(wallRight, ceiling)); // wall right
-
-        for (int i = 0; i < m_physicsData.ObjectCount; i++)
-            m_physicsData.Elasticity[i] = 0.8f;
 
         m_physicsData.Floor = floor * 100.0f;
         m_physicsData.Ceiling = ceiling * 100.0f;
         m_physicsData.WallLeft = wallLeft * 100.0f;
         m_physicsData.WallRight = wallRight * 100.0f;
 
+        for (int i = 0; i < m_physicsData.ObjectCount; i++)
+            m_physicsData.Elasticity[i] = 0.8f;
+
+        FillWithObjects(floor, ceiling, wallLeft, wallRight);
+
+        //RunTest();
+    }
+
+    private void FillWithObjects(float floor, float ceiling, float wallLeft, float wallRight)
+    {
         for (int i = 0; i < MaxObjects; i++)
         {
             Vector2 pos = new Vector2(Random.value * (wallRight - wallLeft) + wallLeft, Random.value * (ceiling - floor) + floor);
@@ -122,7 +90,10 @@ public class Board : MonoBehaviour
             else
                 addBox(pos, 0.5f, 0.5f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
         }
+    }
 
+    private void RunTest()
+    {
         double time = Time.realtimeSinceStartupAsDouble;
         float dt = 1.0f / 60.0f;
         for (int i = 0; i < 1000; i++)
@@ -137,74 +108,28 @@ public class Board : MonoBehaviour
             totalTime += (Time.realtimeSinceStartupAsDouble - time);
         }
         Debug.Log("Average Time: " + (totalTime / 1000.0f).ToString("G4"));
-
-
-        // static ball
-        // addBall(new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), 1.0f, 0.0f, new Vector2(0.0f, 0.0f));
-
-        // static box
-        // addBox(Vector2.zero, 2.0f, 0.5f, Vector2.zero, 0.0f, Vector2.zero);
-        // m_physicsData.Angle[m_physicsData.ObjectCount-1] = 45.0f * Mathf.Deg2Rad;
-
-        // addBall(new Vector2(0.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.5f, 1.0f, new Vector2(0.0f, -0.1f));
-
-        // addBox(new Vector2(1.0f, floor + 0.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-        // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
-        // addBox(new Vector2(1.95f, floor + 1.5f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-        // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 0.9f;
-
-        // addBox(new Vector2(1.0f, 1.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-        // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 1.0f;
-        // m_physicsData.Velocity[m_physicsData.ObjectCount-1] = new Vector2(0.0f, 1.0f);
-        // addBox(new Vector2(1.95f, 3.0f), 1.0f, 1.0f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-        // m_physicsData.Elasticity[m_physicsData.ObjectCount-1] = 1.0f;
-        // m_physicsData.Velocity[m_physicsData.ObjectCount-1] = new Vector2(0.0f, -1.0f);
-
-
     }
 
     // Update is called once per frame
     void Update()
     {
-        // double time = Time.realtimeSinceStartupAsDouble;
         float dt = Time.deltaTime;
         int numIterations = 2;
         if (!FrameByFrame)
             for (int i = 0; i < numIterations; i++)
                 PhysicsLogic.Tick(m_physicsData, dt / (float)numIterations);
-        // Debug.Log(m_physicsData.CircleCount + " time " + (Time.realtimeSinceStartupAsDouble - time).ToString("G5"));
 
-        // m_addTimer += Time.deltaTime;
-        // if (m_addTimer > m_addTime)
+        // if (Input.GetMouseButtonUp(0))
         // {
-        //     m_addTimer -= m_addTime;
-        //     addCircle();
+        //     if (m_physicsData.ObjectCount % 2 == 0)
+        //         addBox(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), 0.5f, 0.5f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
+        //     else
+        //         addBall(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.25f, 1.0f, Gravity);
         // }
 
-        if (Input.GetMouseButtonUp(0))
-        {
-            if (m_physicsData.ObjectCount % 2 == 0)
-                addBox(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), 0.5f, 0.5f, new Vector2(0.0f, 0.0f), 1.0f, Gravity);
-            else
-                addBall(new Vector2(Random.value * 2.0f - 1.0f, 3.0f), new Vector2(0.0f, 0.0f), 0.25f, 1.0f, Gravity);
-        }
-
-        if (Input.GetKeyUp(KeyCode.S))
-        {
-            for (int i = 0; i < m_physicsData.ObjectCount; i++)
-                m_physicsData.Gravity[i] = Vec2.Zero();
-        }
-        if (Input.GetKeyUp(KeyCode.D))
-        {
-            for (int i = 0; i < m_physicsData.ObjectCount; i++)
-                m_physicsData.Gravity[i] = new Vec2(Gravity);
-        }
-
-
+        // for testing
         if (FrameByFrame && Input.GetKeyUp(KeyCode.Space))
-        {
             PhysicsLogic.Tick(m_physicsData, 1.0f / 60.0f);
-        }
 
         ShowVisual(m_physicsData);
     }
