@@ -130,11 +130,8 @@ namespace DODPhysics
 
             addCommon(physicsData, pos, velocity, mass, gravity);
 
-            // Quaternion quaternion = Quaternion.Euler(0.0f, 0.0f, physicsData.Angle[physicsData.ObjectCount] * Mathf.Rad2Deg);            
-            // physicsData.Direction[physicsData.ObjectCount] = quaternion * new Vector2(0.0f, 1.0f);
-
             Vec2 dir = new Vec2(0.0f, 1.0f);
-            dir.RotateRad( physicsData.Angle[physicsData.ObjectCount]);
+            dir.RotateRad(physicsData.Angle[physicsData.ObjectCount]);
             physicsData.Direction[physicsData.ObjectCount] = dir;
 
             physicsData.Vertices[physicsData.ObjectCount] = new Vec2[4];
@@ -161,10 +158,6 @@ namespace DODPhysics
             physicsData.Elasticity[physicsData.ObjectCount] = 1.0f;
         }
 
-        static float maxVel = 0.0f;
-        static float maxAngVel = 0.0f;
-
-        static int frame = 0;
         public static unsafe void Tick(PhysicsData physicsData, float dt)
         {
             for (int i = 0; i < physicsData.ObjectCount; i++)
@@ -180,6 +173,7 @@ namespace DODPhysics
 
                     physicsData.Angle[i] += physicsData.AngularVelocity[i] * dt * 60.0f;
 
+                    //make sure we don't exit our bounds
                     if (physicsData.Position[i].x < physicsData.WallLeft)
                         physicsData.Position[i].x = physicsData.WallLeft + 1.0f;
                     if (physicsData.Position[i].x > physicsData.WallRight)
@@ -193,13 +187,10 @@ namespace DODPhysics
                 if (physicsData.Shape[i] == SHAPE.RECTANGLE)
                     SetRectVertices(physicsData, i);
             }
-            frame++;
 
             for (int i = 0; i < physicsData.ObjectCount; i++)
                 physicsData.CollisionHappenedPrevFrame[i] = false;
 
-
-            // Debug.Log("maxVel " + maxVel + " maxAngVel " + maxAngVel);
 
             int collisionDataSize = physicsData.ObjectCount * 10;
             CollisionData* collisionData = stackalloc CollisionData[collisionDataSize];
@@ -213,6 +204,7 @@ namespace DODPhysics
                         bool checkCollision = (physicsData.Shape[i1] == SHAPE.WALL || physicsData.Shape[i2] == SHAPE.WALL);
                         if (!checkCollision)
                         {
+                            // do a quick circle to circle bounds check (even for boxes)
                             float radius = physicsData.Radius[i1] + physicsData.Radius[i2];
                             float radiusSquared = radius * radius;
                             float dstSquared = (physicsData.Position[i2] - physicsData.Position[i1]).MagnitudeSqr();
@@ -220,6 +212,7 @@ namespace DODPhysics
                         }
                         if (checkCollision)
                         {
+                            // do a more in depth check using the Separating Axis Theorem
                             SATOutputData satOutputData;
                             if (SeparatingAxisTheorem(physicsData, i1, i2, out satOutputData) && rectCollisionDataCount < collisionDataSize)
                                 collisionData[rectCollisionDataCount++] = new CollisionData(i1, i2, satOutputData.Axis, satOutputData.Penetration, satOutputData.CollisionVertex);
@@ -253,7 +246,7 @@ namespace DODPhysics
             float halfHeight = physicsData.RectHeight[idx] / 2.0f;
 
             Vec2 dir = new Vec2(0.0f, 1.0f);
-            dir.RotateRad( physicsData.Angle[idx]);
+            dir.RotateRad(physicsData.Angle[idx]);
 
             physicsData.Direction[idx] = dir;
 
@@ -329,9 +322,7 @@ namespace DODPhysics
             getMinMaxForAxis(physicsData, vertexRectIdx, smallestAxis, out min, out max, out collisionVertex);
 
             if (vertexRectIdx == idx2)
-            {
                 smallestAxis = smallestAxis * -1.0f;
-            }
 
             satOutputData.Penetration = minOverlap;
             satOutputData.Axis = smallestAxis;
@@ -416,10 +407,6 @@ namespace DODPhysics
 
         public static void PenetrationResolution(PhysicsData physicsData, CollisionData rectCollisionData)
         {
-            // let penResolution = this.normal.mult(this.pen / (this.o1.inv_m + this.o2.inv_m));
-            // this.o1.pos = this.o1.pos.add(penResolution.mult(this.o1.inv_m));
-            // this.o2.pos = this.o2.pos.add(penResolution.mult(-this.o2.inv_m));
-
             int idx1 = rectCollisionData.Idx1;
             int idx2 = rectCollisionData.Idx2;
             if (rectCollisionData.Penetration > 0.01f && physicsData.InvMass[idx1] > 0.0f || physicsData.InvMass[idx2] > 0.0f)
@@ -430,28 +417,11 @@ namespace DODPhysics
             }
         }
 
-        public static float VectorCross2D(Vector2 v1, Vector2 v2)
-        {
-            return v1.x * v2.y - v1.y * v2.x;
-        }
-
-        public static Vector2 VectorPerpendicular2D(Vector2 v)
-        {
-            return new Vector2(-v.y, v.x).normalized;
-        }
-
         public static void CollisionResponse(PhysicsData physicsData, CollisionData rectCollisionData)
         {
             int idx1 = rectCollisionData.Idx1;
             int idx2 = rectCollisionData.Idx2;
 
-            //1. Closing velocity
-            // let collArm1 = this.cp.subtr(this.o1.comp[0].pos);
-            // let rotVel1 = new Vector(-this.o1.angVel * collArm1.y, this.o1.angVel * collArm1.x);
-            // let closVel1 = this.o1.vel.add(rotVel1);
-            // let collArm2 = this.cp.subtr(this.o2.comp[0].pos);
-            // let rotVel2= new Vector(-this.o2.angVel * collArm2.y, this.o2.angVel * collArm2.x);
-            // let closVel2 = this.o2.vel.add(rotVel2);
 
             Vec2 collArm1 = rectCollisionData.CollisionPoint - physicsData.Position[idx1];
             Vec2 rotVel1 = new Vec2(-physicsData.AngularVelocity[idx1] * collArm1.y, physicsData.AngularVelocity[idx1] * collArm1.x);
@@ -461,21 +431,12 @@ namespace DODPhysics
             Vec2 rotVel2 = new Vec2(-physicsData.AngularVelocity[idx2] * collArm2.y, physicsData.AngularVelocity[idx2] * collArm2.x);
             Vec2 closVel2 = physicsData.Velocity[idx2] + rotVel2;
 
-            // //2. Impulse augmentation
-            // let impAug1 = Vector.cross(collArm1, this.normal);
-            // impAug1 = impAug1 * this.o1.inv_inertia * impAug1;
-            // let impAug2 = Vector.cross(collArm2, this.normal);
-            // impAug2 = impAug2 * this.o2.inv_inertia * impAug2;
 
             float impAug1 = Vec2.Cross(collArm1, rectCollisionData.Perpendicular);
             impAug1 = impAug1 * physicsData.InvInertia[idx1] * impAug1;
             float impAug2 = Vec2.Cross(collArm2, rectCollisionData.Perpendicular);
             impAug2 = impAug2 * physicsData.InvInertia[idx2] * impAug2;
 
-            // let relVel = closVel1.subtr(closVel2);
-            // let sepVel = Vector.dot(relVel, this.normal);
-            // let new_sepVel = -sepVel * Math.min(this.o1.elasticity, this.o2.elasticity);
-            // let vsep_diff = new_sepVel - sepVel;
 
             Vec2 retVel = closVel1 - closVel2;
             float sepVel = Vec2.Dot(retVel, rectCollisionData.Perpendicular);
@@ -485,24 +446,15 @@ namespace DODPhysics
             float invMass1 = physicsData.InvMass[idx1];
             float invMass2 = physicsData.InvMass[idx2];
 
-            // let impulse = vsep_diff / (this.o1.inv_m + this.o2.inv_m + impAug1 + impAug2);
-            // let impulseVec = this.normal.mult(impulse);
+
             float impulse = (invMass1 + invMass2 + impAug1 + impAug2) > 0.0f ? vsepDiff / (invMass1 + invMass2 + impAug1 + impAug2) : 0.0f;
             Vec2 impulseVec = rectCollisionData.Perpendicular * impulse;
 
-            // //3. Changing the velocities
-            // this.o1.vel = this.o1.vel.add(impulseVec.mult(this.o1.inv_m));
-            // this.o2.vel = this.o2.vel.add(impulseVec.mult(-this.o2.inv_m));
             physicsData.Velocity[idx1] += impulseVec * invMass1;
             physicsData.Velocity[idx2] -= impulseVec * invMass2;
 
-            // this.o1.angVel += this.o1.inv_inertia * Vector.cross(collArm1, impulseVec);
-            // this.o2.angVel -= this.o2.inv_inertia * Vector.cross(collArm2, impulseVec);
             physicsData.AngularVelocity[idx1] += physicsData.InvInertia[idx1] * Vec2.Cross(collArm1, impulseVec);
             physicsData.AngularVelocity[idx2] -= physicsData.InvInertia[idx2] * Vec2.Cross(collArm2, impulseVec);
-
-            // Debug.Log("physicsData.AngularVelocity[" + idx1 + "] " + physicsData.AngularVelocity[idx1]); 
-            // Debug.Log("physicsData.AngularVelocity[" + idx2 + "] " + physicsData.AngularVelocity[idx2]);
         }
     }
 }

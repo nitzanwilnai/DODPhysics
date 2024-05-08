@@ -14,15 +14,15 @@ namespace DODPhysics
         public float Ceiling;
 
         // circles
-        public float[] Radius;
+        public float[] Radius; // also used for quick collision detection
 
         // rect
         public float[] RectWidth;
         public float[] RectHeight;
 
+        // common
         public float Friction;
 
-        // common
         public int MaxObjects;
         public int ObjectCount;
         public SHAPE[] Shape;
@@ -30,7 +30,6 @@ namespace DODPhysics
         public int[] NumAxis;
 
         public Vec2[] Gravity;
-        public int[] UnFixedIdxs;
 
         public Vec2[] Position;
         public Vec2[] Direction;
